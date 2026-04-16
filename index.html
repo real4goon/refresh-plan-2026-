@@ -4,1362 +4,825 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>연차 · 반차 현황판</title>
-<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700&family=Gmarket+Sans:wght@300;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&family=Gmarket+Sans:wght@300;500;700&display=swap" rel="stylesheet">
 <style>
-/* ══════════════════════════════════════════
-   DESIGN: 깔끔한 오피스 다크-라이트 혼합
-   ══════════════════════════════════════════ */
 :root {
-  --bg: #f4f6fa;
+  --bg: #f0f3f8;
   --surface: #ffffff;
-  --surface2: #f8f9fc;
-  --border: #e8ecf2;
-  --border2: #d4dae6;
-  --text: #1c2333;
-  --text2: #5a6478;
-  --text3: #9aa3b5;
+  --surface2: #f7f9fc;
+  --border: #e4e9f2;
+  --border2: #cdd4e4;
+  --text: #1a2236;
+  --text2: #546080;
+  --text3: #96a3bc;
   --accent: #2563eb;
-  --accent-light: #eff4ff;
-  --accent-hover: #1d4ed8;
+  --accent-lt: #eff4ff;
+  --accent-hv: #1d4ed8;
   --danger: #dc2626;
   --success: #16a34a;
-  --warn: #d97706;
-  --sidebar-bg: #1e2640;
-  --sidebar-active: #2563eb;
-  --header-bg: #13192b;
-  --header-h: 56px;
-  --sidebar-w: 68px;
-  --cal-w: 500px;
-  --radius: 10px;
-  --radius-sm: 6px;
-  --shadow: 0 1px 8px rgba(0,0,0,0.07);
-  --shadow-md: 0 4px 20px rgba(0,0,0,0.10);
-  --shadow-lg: 0 8px 40px rgba(0,0,0,0.14);
+  --sidebar: #151d35;
+  --header: #0f1526;
+  --hh: 56px;
+  --sw: 70px;
+  --r: 10px;
+  --r2: 7px;
+  --sh: 0 1px 8px rgba(0,0,0,.07);
+  --sh2: 0 6px 28px rgba(0,0,0,.12);
 }
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);font-size:13px;line-height:1.5}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:10px}
 
-*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+/* ── LOCK ── */
+#lock{
+  position:fixed;inset:0;z-index:9999;
+  background:var(--header);
+  display:flex;align-items:center;justify-content:center;
+}
+#lock::before{
+  content:'';position:absolute;inset:0;
+  background:
+    radial-gradient(ellipse at 25% 35%,rgba(37,99,235,.18) 0%,transparent 55%),
+    radial-gradient(ellipse at 75% 70%,rgba(124,58,237,.10) 0%,transparent 55%);
+  pointer-events:none;
+}
+.lcard{
+  position:relative;
+  width:340px;
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.09);
+  border-radius:22px;
+  padding:52px 48px;
+  text-align:center;
+  backdrop-filter:blur(20px);
+  box-shadow:0 32px 80px rgba(0,0,0,.45);
+}
+.llogo{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:28px}
+.llogo .ico{width:38px;height:38px;background:var(--accent);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px}
+.llogo span{font-family:'Gmarket Sans',sans-serif;font-size:19px;font-weight:700;color:#fff}
+.lcard p{color:rgba(255,255,255,.45);font-size:13px;margin-bottom:22px}
+.linput{
+  width:100%;padding:13px;
+  background:rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.14);
+  border-radius:var(--r);
+  color:#fff;font-size:24px;letter-spacing:12px;
+  text-align:center;outline:none;font-family:inherit;
+  transition:border-color .2s;margin-bottom:13px;
+}
+.linput:focus{border-color:var(--accent)}
+.linput.shake{animation:shake .36s ease;border-color:#f87171!important}
+.lbtn{
+  width:100%;padding:13px;
+  background:var(--accent);border:none;border-radius:var(--r);
+  color:#fff;font-size:14px;font-weight:700;
+  cursor:pointer;font-family:inherit;
+  transition:background .15s,transform .1s;
+}
+.lbtn:hover{background:var(--accent-hv)}
+.lbtn:active{transform:scale(.98)}
+.lerr{min-height:16px;font-size:12px;color:#f87171;margin-top:9px}
 
-body {
-  font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  font-size: 13px;
-  line-height: 1.5;
-  overflow: hidden;
-  height: 100vh;
+/* ── HEADER ── */
+#hdr{
+  position:fixed;top:0;left:0;right:0;
+  height:var(--hh);
+  background:var(--header);
+  display:none;align-items:center;
+  padding:0 18px 0 calc(var(--sw)+14px);
+  gap:10px;z-index:200;
+  border-bottom:1px solid rgba(255,255,255,.05);
 }
+.hlogo{display:flex;align-items:center;gap:8px}
+.hlogo .ico{width:28px;height:28px;background:var(--accent);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px}
+.hlogo span{font-family:'Gmarket Sans',sans-serif;font-size:15px;font-weight:700;color:#fff}
+.hright{margin-left:auto;display:flex;gap:7px;align-items:center}
+.hbtn{
+  display:flex;align-items:center;gap:4px;
+  padding:6px 12px;
+  border:1px solid rgba(255,255,255,.12);
+  background:transparent;color:rgba(255,255,255,.7);
+  border-radius:var(--r2);font-size:12px;font-weight:500;
+  cursor:pointer;font-family:inherit;transition:all .15s;
+}
+.hbtn:hover{background:rgba(255,255,255,.09);color:#fff}
+.hbtn.acc{background:var(--accent);border-color:var(--accent);color:#fff}
+.hbtn.acc:hover{background:var(--accent-hv)}
+.sync{display:flex;align-items:center;gap:5px;font-size:11px;color:rgba(255,255,255,.38)}
+.sdot{width:6px;height:6px;border-radius:50%;background:#96a3bc;transition:background .3s}
+.sdot.ok{background:#4ade80}
+.sdot.er{background:#f87171}
+.sdot.ld{background:#fbbf24;animation:pulse 1s infinite}
 
-/* ── SCROLLBAR ── */
-::-webkit-scrollbar { width: 5px; height: 5px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 10px; }
+/* ── SIDEBAR ── */
+#sb{
+  position:fixed;top:var(--hh);left:0;
+  width:var(--sw);height:calc(100vh - var(--hh));
+  background:var(--sidebar);
+  display:none;flex-direction:column;
+  overflow-y:auto;padding:10px 0;gap:2px;
+  z-index:100;border-right:1px solid rgba(255,255,255,.04);
+}
+.mtab{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:9px 4px;margin:0 6px;border-radius:9px;
+  cursor:pointer;transition:all .15s;gap:1px;
+}
+.mtab .mn{font-family:'Gmarket Sans',sans-serif;font-size:18px;font-weight:700;color:rgba(255,255,255,.3);line-height:1}
+.mtab .ml{font-size:9px;color:rgba(255,255,255,.18);letter-spacing:.3px}
+.mtab:hover .mn{color:rgba(255,255,255,.7)}
+.mtab.on{background:rgba(37,99,235,.22)}
+.mtab.on .mn{color:#93b4ff}
+.mtab.on .ml{color:#93b4ff}
 
-/* ══════════════════════════
-   LOCK SCREEN
-══════════════════════════ */
-#lockScreen {
-  position: fixed; inset: 0; z-index: 9999;
-  background: var(--header-bg);
-  display: flex; align-items: center; justify-content: center;
-}
-#lockScreen::before {
-  content: '';
-  position: absolute; inset: 0;
-  background: radial-gradient(ellipse at 30% 40%, rgba(37,99,235,0.15) 0%, transparent 60%),
-              radial-gradient(ellipse at 70% 70%, rgba(99,37,235,0.08) 0%, transparent 60%);
-  pointer-events: none;
-}
-.lock-card {
-  position: relative;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 20px;
-  padding: 52px 56px;
-  text-align: center;
-  backdrop-filter: blur(24px);
-  width: 360px;
-  box-shadow: 0 32px 80px rgba(0,0,0,0.4);
-}
-.lock-logo {
-  display: inline-flex; align-items: center; gap: 10px;
-  margin-bottom: 32px;
-}
-.lock-logo .dot {
-  width: 36px; height: 36px;
-  background: var(--accent);
-  border-radius: 10px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 18px;
-}
-.lock-logo span {
-  font-family: 'Gmarket Sans', sans-serif;
-  font-size: 20px; font-weight: 700;
-  color: #fff; letter-spacing: -0.3px;
-}
-.lock-card h2 { color: rgba(255,255,255,0.9); font-size: 15px; font-weight: 500; margin-bottom: 24px; }
-.lock-input {
-  width: 100%;
-  padding: 13px 18px;
-  background: rgba(255,255,255,0.07);
-  border: 1px solid rgba(255,255,255,0.15);
-  border-radius: var(--radius);
-  color: #fff;
-  font-size: 22px;
-  letter-spacing: 10px;
-  text-align: center;
-  outline: none;
-  font-family: inherit;
-  transition: border-color 0.2s;
-  margin-bottom: 14px;
-}
-.lock-input:focus { border-color: var(--accent); }
-.lock-input.err-shake { animation: shake 0.38s ease; border-color: #f87171 !important; }
-.lock-btn {
-  width: 100%;
-  padding: 13px;
-  background: var(--accent);
-  border: none; border-radius: var(--radius);
-  color: #fff; font-size: 14px; font-weight: 700;
-  cursor: pointer; font-family: inherit;
-  transition: background 0.15s, transform 0.1s;
-  letter-spacing: 0.3px;
-}
-.lock-btn:hover { background: var(--accent-hover); }
-.lock-btn:active { transform: scale(0.98); }
-.lock-err { min-height: 16px; font-size: 12px; color: #f87171; margin-top: 10px; }
+/* ── APP ── */
+#app{display:none;padding-top:var(--hh);padding-left:var(--sw);height:100vh;overflow:hidden}
+#main{display:flex;height:100%;overflow:hidden}
 
-/* ══════════════════════════
-   HEADER
-══════════════════════════ */
-#header {
-  position: fixed; top:0; left:0; right:0;
-  height: var(--header-h);
-  background: var(--header-bg);
-  display: none; align-items: center;
-  padding: 0 20px 0 calc(var(--sidebar-w) + 16px);
-  z-index: 200;
-  gap: 12px;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
+/* ── CALENDAR ── */
+#calP{
+  width:510px;flex-shrink:0;
+  display:flex;flex-direction:column;
+  background:var(--surface);
+  border-right:1px solid var(--border);
+  height:100%;overflow:hidden;
 }
-.header-logo {
-  display: flex; align-items: center; gap: 8px;
+.ctop{padding:18px 20px 14px;border-bottom:1px solid var(--border);flex-shrink:0}
+.ctop h2{font-family:'Gmarket Sans',sans-serif;font-size:21px;font-weight:700}
+.ctop .sub{color:var(--text3);font-size:12px;margin-top:3px}
+.lgbar{
+  padding:9px 16px;display:flex;flex-wrap:wrap;gap:6px;
+  border-bottom:1px solid var(--border);background:var(--surface2);flex-shrink:0;
 }
-.header-logo .dot {
-  width: 28px; height: 28px;
-  background: var(--accent);
-  border-radius: 7px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 14px;
+.lgit{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text2)}
+.lgdot{width:8px;height:8px;border-radius:3px;flex-shrink:0}
+.cscroll{flex:1;overflow-y:auto;padding:14px 16px}
+.cdow{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:4px}
+.dcell{text-align:center;font-size:11px;font-weight:700;padding:4px 0;color:var(--text3)}
+.dcell:first-child{color:#ef4444}
+.dcell:last-child{color:var(--accent)}
+.cgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.ccell{
+  border-radius:var(--r2);border:1.5px solid transparent;
+  cursor:pointer;background:var(--surface2);
+  min-height:62px;display:flex;flex-direction:column;
+  transition:all .12s;overflow:hidden;
 }
-.header-logo span {
-  font-family: 'Gmarket Sans', sans-serif;
-  font-size: 15px; font-weight: 700;
-  color: #fff;
+.ccell:hover{border-color:var(--border2);box-shadow:var(--sh);transform:translateY(-1px)}
+.ccell.today{border-color:var(--accent)}
+.ccell.today .dno{color:var(--accent)}
+.ccell.emp{background:transparent;border:none;cursor:default}
+.ccell.emp:hover{transform:none;box-shadow:none}
+.ccell.sun .dno{color:#ef4444}
+.ccell.sat .dno{color:var(--accent)}
+.dno{font-size:11px;font-weight:700;padding:5px 6px 2px;color:var(--text);line-height:1}
+.cchips{padding:0 3px 3px;display:flex;flex-direction:column;gap:2px;overflow:hidden}
+.cchip{
+  font-size:9.5px;font-weight:700;
+  padding:2px 5px;border-radius:4px;
+  color:#fff;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis;line-height:1.45;
 }
-.header-right { margin-left: auto; display: flex; gap: 8px; align-items: center; }
-.hbtn {
-  display: flex; align-items: center; gap: 5px;
-  padding: 6px 13px;
-  border: 1px solid rgba(255,255,255,0.12);
-  background: transparent;
-  color: rgba(255,255,255,0.75);
-  border-radius: var(--radius-sm);
-  font-size: 12px; font-weight: 500;
-  cursor: pointer; font-family: inherit;
-  transition: all 0.15s;
-}
-.hbtn:hover { background: rgba(255,255,255,0.08); color: #fff; }
-.hbtn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-.hbtn.primary:hover { background: var(--accent-hover); }
-.sync-status {
-  display: flex; align-items: center; gap: 5px;
-  font-size: 11px; color: rgba(255,255,255,0.4);
-}
-.sync-dot {
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: #9aa3b5;
-  transition: background 0.3s;
-}
-.sync-dot.ok { background: #4ade80; }
-.sync-dot.err { background: #f87171; }
-.sync-dot.loading { background: #fbbf24; animation: pulse 1s infinite; }
+.cmore{font-size:9px;color:var(--text3);padding:0 4px}
 
-/* ══════════════════════════
-   SIDEBAR (month tabs)
-══════════════════════════ */
-#sidebar {
-  position: fixed;
-  top: var(--header-h); left: 0;
-  width: var(--sidebar-w);
-  height: calc(100vh - var(--header-h));
-  background: var(--sidebar-bg);
-  display: none;
-  flex-direction: column;
-  overflow-y: auto;
-  padding: 10px 0;
-  gap: 2px;
-  z-index: 100;
-  border-right: 1px solid rgba(255,255,255,0.05);
+/* ── TABLE ── */
+#tblP{flex:1;display:flex;flex-direction:column;background:var(--surface);overflow:hidden}
+.ttop{
+  padding:18px 20px 14px;border-bottom:1px solid var(--border);
+  flex-shrink:0;display:flex;align-items:flex-start;justify-content:space-between;
 }
-.mtab {
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  padding: 9px 4px;
-  margin: 0 6px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.15s;
-  gap: 1px;
+.ttop h3{font-family:'Gmarket Sans',sans-serif;font-size:17px;font-weight:700}
+.ttop .sub{color:var(--text3);font-size:11px;margin-top:3px}
+.tscroll{flex:1;overflow:auto}
+#ltbl{border-collapse:collapse;width:100%;min-width:680px;font-size:11.5px}
+#ltbl th,#ltbl td{border:1px solid var(--border);text-align:center;white-space:nowrap}
+#ltbl thead th{
+  background:#f1f5fb;font-weight:700;font-size:11px;color:var(--text2);
+  padding:7px 6px;position:sticky;top:0;z-index:2;
 }
-.mtab .mn { font-family: 'Gmarket Sans'; font-size: 17px; font-weight: 700; color: rgba(255,255,255,0.35); line-height:1; }
-.mtab .ml { font-size: 9px; color: rgba(255,255,255,0.2); letter-spacing:0.3px; }
-.mtab:hover .mn { color: rgba(255,255,255,0.75); }
-.mtab.active { background: rgba(37,99,235,0.25); }
-.mtab.active .mn { color: #93b4ff; }
-.mtab.active .ml { color: #93b4ff; }
+#ltbl thead th.fc{left:0;z-index:3;min-width:76px;border-right:2px solid var(--border2)}
+#ltbl tbody td.fc{
+  position:sticky;left:0;background:var(--surface);
+  font-weight:700;font-size:12px;padding:6px 10px;
+  z-index:1;border-right:2px solid var(--border2);
+}
+#ltbl tbody tr:hover td{background:#f5f8ff}
+#ltbl tbody tr:hover td.fc{background:#f5f8ff}
+.tbdg{display:inline-block;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:800;color:#fff;margin:1px}
+.sc{background:#eff4ff!important;color:var(--accent)!important;font-weight:800!important}
+.sc2{background:#fff5f5!important;color:#dc2626!important;font-weight:800!important}
+.sumr td{background:#f1f5fb!important;font-weight:700!important;color:var(--text2)!important}
+.sun-h{color:#ef4444}.sat-h{color:var(--accent)}
 
-/* ══════════════════════════
-   MAIN LAYOUT
-══════════════════════════ */
-#app {
-  display: none;
-  padding-top: var(--header-h);
-  padding-left: var(--sidebar-w);
-  height: 100vh;
-  overflow: hidden;
+/* ── MODAL ── */
+.ov{
+  position:fixed;inset:0;background:rgba(10,15,30,.55);
+  backdrop-filter:blur(5px);z-index:500;
+  display:flex;align-items:center;justify-content:center;
 }
-#main {
-  display: flex;
-  height: 100%;
-  overflow: hidden;
+.modal{
+  background:var(--surface);border-radius:16px;
+  padding:28px 30px;width:420px;max-width:95vw;
+  max-height:88vh;overflow-y:auto;
+  box-shadow:var(--sh2);position:relative;
 }
+.mlg{width:480px}
+.modal h3{font-family:'Gmarket Sans',sans-serif;font-size:17px;font-weight:700;margin-bottom:4px}
+.msub{color:var(--text3);font-size:12px;margin-bottom:20px}
+.mcls{
+  position:absolute;top:14px;right:14px;
+  width:30px;height:30px;
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:7px;cursor:pointer;font-size:16px;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--text2);transition:all .12s;
+}
+.mcls:hover{background:var(--border);color:var(--text)}
+.flbl{font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:7px}
+.fg{margin-bottom:18px}
+.fi{
+  width:100%;padding:10px 13px;
+  border:1.5px solid var(--border2);border-radius:var(--r2);
+  font-size:13px;font-family:inherit;
+  background:var(--surface2);color:var(--text);
+  outline:none;transition:border-color .15s;
+}
+.fi:focus{border-color:var(--accent)}
+.tchips{display:flex;flex-wrap:wrap;gap:7px}
+.tchip{
+  padding:7px 13px;
+  border:1.5px solid var(--border2);border-radius:8px;
+  background:var(--surface2);font-size:12px;font-weight:700;
+  cursor:pointer;font-family:inherit;color:var(--text2);transition:all .12s;
+}
+.tchip:hover{border-color:var(--accent);color:var(--accent)}
+.tchip.sel{color:#fff!important;border-color:transparent!important}
+.elist{display:flex;flex-direction:column;gap:5px;margin-bottom:14px;max-height:180px;overflow-y:auto}
+.eit{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:8px 12px;background:var(--surface2);
+  border:1px solid var(--border);border-radius:8px;
+}
+.eit .ei{display:flex;flex-direction:column}
+.eit .en{font-weight:700;font-size:12px}
+.eit .et{font-size:11px;color:var(--text3)}
+.edel{background:none;border:none;cursor:pointer;color:var(--text3);font-size:18px;padding:0 2px;line-height:1}
+.edel:hover{color:var(--danger)}
+.mft{display:flex;gap:8px;margin-top:20px}
+.btn{flex:1;padding:11px;border-radius:var(--r2);border:none;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .12s}
+.bpri{background:var(--accent);color:#fff}.bpri:hover{background:var(--accent-hv)}
+.bgho{background:var(--surface2);border:1.5px solid var(--border2);color:var(--text2)}.bgho:hover{background:var(--border)}
+.bdan{background:var(--danger);color:#fff}.bdan:hover{background:#b91c1c}
+.atabs{display:flex;gap:3px;margin-bottom:20px;background:var(--surface2);padding:3px;border-radius:9px}
+.atab{flex:1;padding:8px;border:none;background:transparent;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;color:var(--text3);transition:all .15s}
+.atab.on{background:var(--surface);color:var(--accent);box-shadow:var(--sh)}
+.tglist{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px;min-height:36px}
+.tg{display:flex;align-items:center;gap:6px;padding:5px 10px;background:var(--surface2);border:1px solid var(--border2);border-radius:7px;font-size:12px;font-weight:600}
+.tgdot{width:9px;height:9px;border-radius:3px;flex-shrink:0}
+.tgdel{background:none;border:none;cursor:pointer;color:var(--text3);font-size:15px;padding:0;line-height:1}
+.tgdel:hover{color:var(--danger)}
+.arow{display:flex;gap:7px;margin-top:6px}
+.arow input[type=text]{flex:1;padding:9px 12px;border:1.5px solid var(--border2);border-radius:var(--r2);font-size:13px;font-family:inherit;background:var(--surface2);color:var(--text);outline:none;transition:border-color .15s}
+.arow input[type=text]:focus{border-color:var(--accent)}
+.arow input[type=color]{width:38px;padding:4px;border:1.5px solid var(--border2);border-radius:var(--r2);cursor:pointer;background:var(--surface2)}
+.arow button{padding:9px 15px;background:var(--accent);border:none;border-radius:var(--r2);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;transition:background .12s}
+.arow button:hover{background:var(--accent-hv)}
 
-/* ══════════════════════════
-   CALENDAR PANEL
-══════════════════════════ */
-#calPanel {
-  width: var(--cal-w);
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  background: var(--surface);
-  border-right: 1px solid var(--border);
-  height: 100%;
-  overflow: hidden;
+/* ── TOAST / LOADING ── */
+.toast{
+  position:fixed;bottom:22px;left:50%;
+  transform:translateX(-50%) translateY(70px);
+  background:#1a2236;color:#fff;
+  padding:11px 22px;border-radius:10px;
+  font-size:13px;font-weight:500;z-index:9999;
+  opacity:0;transition:all .28s ease;
+  pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,.2);
+  max-width:90vw;text-align:center;
 }
-.cal-top {
-  padding: 18px 20px 14px;
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.ok{border-left:3px solid #4ade80}
+.toast.er{border-left:3px solid #f87171}
+#ldov{
+  position:fixed;inset:0;background:rgba(255,255,255,.65);
+  backdrop-filter:blur(3px);z-index:800;
+  display:none;align-items:center;justify-content:center;flex-direction:column;gap:12px;
 }
-.cal-top h2 {
-  font-family: 'Gmarket Sans';
-  font-size: 20px; font-weight: 700;
-  color: var(--text);
-}
-.cal-top .sub { color: var(--text3); font-size: 12px; margin-top: 3px; }
+.spin{width:36px;height:36px;border:3px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+#ldov p{font-size:13px;color:var(--text2)}
 
-/* legend */
-.legend {
-  padding: 10px 16px;
-  display: flex; flex-wrap: wrap; gap: 6px;
-  border-bottom: 1px solid var(--border);
-  background: var(--surface2);
-  flex-shrink: 0;
-}
-.leg-item { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text2); }
-.leg-dot { width: 8px; height: 8px; border-radius: 3px; flex-shrink:0; }
-
-/* calendar grid */
-.cal-scroll { flex: 1; overflow-y: auto; padding: 14px 16px; }
-.cal-dow {
-  display: grid; grid-template-columns: repeat(7,1fr);
-  margin-bottom: 4px;
-}
-.dow-cell {
-  text-align: center; font-size: 11px; font-weight: 700;
-  padding: 4px 0; color: var(--text3);
-}
-.dow-cell:first-child { color: #ef4444; }
-.dow-cell:last-child { color: var(--accent); }
-
-.cal-grid {
-  display: grid;
-  grid-template-columns: repeat(7,1fr);
-  gap: 3px;
-}
-.cal-cell {
-  border-radius: var(--radius-sm);
-  border: 1px solid transparent;
-  cursor: pointer;
-  background: var(--surface2);
-  min-height: 60px;
-  display: flex; flex-direction: column;
-  transition: all 0.12s;
-  overflow: hidden;
-  position: relative;
-}
-.cal-cell:hover { border-color: var(--border2); box-shadow: var(--shadow); transform: translateY(-1px); }
-.cal-cell.today { border-color: var(--accent); }
-.cal-cell.today .dnum { color: var(--accent); }
-.cal-cell.empty { background: transparent; border: none; cursor: default; }
-.cal-cell.empty:hover { transform: none; box-shadow: none; }
-.cal-cell.sun .dnum { color: #ef4444; }
-.cal-cell.sat .dnum { color: var(--accent); }
-.dnum {
-  font-size: 11px; font-weight: 700;
-  padding: 5px 6px 3px;
-  color: var(--text);
-  line-height: 1;
-}
-.cell-entries {
-  padding: 0 3px 3px;
-  display: flex; flex-direction: column; gap: 2px;
-  overflow: hidden;
-}
-.cell-chip {
-  font-size: 9.5px; font-weight: 700;
-  padding: 2px 5px;
-  border-radius: 4px;
-  color: #fff;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  line-height: 1.4;
-}
-.cell-more { font-size: 9px; color: var(--text3); padding: 0 4px; }
-
-/* ══════════════════════════
-   TABLE PANEL
-══════════════════════════ */
-#tblPanel {
-  flex: 1;
-  display: flex; flex-direction: column;
-  background: var(--surface);
-  overflow: hidden;
-}
-.tbl-top {
-  padding: 18px 20px 14px;
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
-  display: flex; align-items: flex-start; justify-content: space-between;
-}
-.tbl-top h3 { font-family: 'Gmarket Sans'; font-size: 17px; font-weight: 700; }
-.tbl-top .sub { color: var(--text3); font-size: 11px; margin-top: 3px; }
-.tbl-scroll { flex: 1; overflow: auto; }
-
-#leaveTable {
-  border-collapse: collapse;
-  width: 100%;
-  min-width: 700px;
-  font-size: 11.5px;
-}
-#leaveTable th, #leaveTable td {
-  border: 1px solid var(--border);
-  text-align: center;
-  white-space: nowrap;
-}
-#leaveTable thead th {
-  background: #f1f4f9;
-  font-weight: 700;
-  font-size: 11px;
-  color: var(--text2);
-  padding: 7px 8px;
-  position: sticky; top: 0; z-index: 2;
-}
-#leaveTable thead th.fcol {
-  left: 0; z-index: 3;
-  min-width: 76px;
-  border-right: 2px solid var(--border2);
-}
-#leaveTable tbody td.fcol {
-  position: sticky; left: 0;
-  background: var(--surface);
-  font-weight: 700; font-size: 12px;
-  padding: 6px 10px;
-  z-index: 1;
-  border-right: 2px solid var(--border2);
-}
-#leaveTable tbody tr:hover td { background: #f5f8ff; }
-#leaveTable tbody tr:hover td.fcol { background: #f5f8ff; }
-.tbadge {
-  display: inline-block;
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-size: 10px; font-weight: 800;
-  color: #fff; margin: 1px;
-  letter-spacing: 0.2px;
-}
-.scol {
-  background: #eff4ff !important;
-  color: var(--accent) !important;
-  font-weight: 800 !important;
-}
-.scol2 {
-  background: #fff5f5 !important;
-  color: #dc2626 !important;
-  font-weight: 800 !important;
-}
-.sum-row td {
-  background: #f1f4f9 !important;
-  font-weight: 700 !important;
-  color: var(--text2) !important;
-}
-.sun-col { color: #ef4444; }
-.sat-col { color: var(--accent); }
-
-/* ══════════════════════════
-   MODAL BASE
-══════════════════════════ */
-.overlay {
-  position: fixed; inset: 0;
-  background: rgba(13,19,35,0.55);
-  backdrop-filter: blur(5px);
-  z-index: 500;
-  display: flex; align-items: center; justify-content: center;
-}
-.modal {
-  background: var(--surface);
-  border-radius: 16px;
-  padding: 28px 32px;
-  width: 420px;
-  max-width: 95vw;
-  max-height: 88vh;
-  overflow-y: auto;
-  box-shadow: var(--shadow-lg);
-  position: relative;
-}
-.modal-lg { width: 480px; }
-.modal h3 {
-  font-family: 'Gmarket Sans';
-  font-size: 17px; font-weight: 700;
-  margin-bottom: 4px;
-}
-.modal-sub { color: var(--text3); font-size: 12px; margin-bottom: 22px; }
-.mclose {
-  position: absolute; top: 14px; right: 14px;
-  width: 30px; height: 30px;
-  background: var(--surface2); border: 1px solid var(--border);
-  border-radius: 7px; cursor: pointer;
-  font-size: 16px; display: flex; align-items: center; justify-content: center;
-  color: var(--text2); transition: all 0.12s;
-}
-.mclose:hover { background: var(--border); color: var(--text); }
-
-/* field */
-.flabel {
-  font-size: 10px; font-weight: 800;
-  color: var(--text3); text-transform: uppercase;
-  letter-spacing: 0.8px; margin-bottom: 7px;
-}
-.fgroup { margin-bottom: 18px; }
-
-/* inputs */
-.finput, .fselect {
-  width: 100%; padding: 10px 13px;
-  border: 1.5px solid var(--border2);
-  border-radius: var(--radius-sm);
-  font-size: 13px; font-family: inherit;
-  background: var(--surface2); color: var(--text);
-  outline: none; transition: border-color 0.15s;
-}
-.finput:focus, .fselect:focus { border-color: var(--accent); }
-
-/* type chips */
-.type-chips { display: flex; flex-wrap: wrap; gap: 7px; }
-.tchip {
-  padding: 7px 14px;
-  border: 1.5px solid var(--border2);
-  border-radius: 8px;
-  background: var(--surface2);
-  font-size: 12px; font-weight: 700;
-  cursor: pointer; font-family: inherit;
-  color: var(--text2);
-  transition: all 0.12s;
-}
-.tchip:hover { border-color: var(--accent); color: var(--accent); }
-.tchip.sel { color: #fff !important; border-color: transparent !important; }
-
-/* entry list */
-.elist { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; max-height: 180px; overflow-y: auto; }
-.eitem {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 8px 12px;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-}
-.eitem .ei { display: flex; flex-direction: column; }
-.eitem .en { font-weight: 700; font-size: 12px; }
-.eitem .et { font-size: 11px; color: var(--text3); }
-.edel { background: none; border: none; cursor: pointer; color: var(--text3); font-size: 18px; padding: 0 2px; line-height:1; }
-.edel:hover { color: var(--danger); }
-
-/* buttons */
-.mfooter { display: flex; gap: 8px; margin-top: 22px; }
-.btn {
-  flex: 1; padding: 11px;
-  border-radius: var(--radius-sm);
-  border: none; font-size: 13px; font-weight: 700;
-  cursor: pointer; font-family: inherit;
-  transition: all 0.12s;
-}
-.btn-primary { background: var(--accent); color: #fff; }
-.btn-primary:hover { background: var(--accent-hover); }
-.btn-ghost { background: var(--surface2); border: 1.5px solid var(--border2); color: var(--text2); }
-.btn-ghost:hover { background: var(--border); }
-.btn-danger { background: var(--danger); color: #fff; }
-.btn-danger:hover { background: #b91c1c; }
-
-/* admin tabs */
-.atabs { display: flex; gap: 3px; margin-bottom: 22px; background: var(--surface2); padding: 3px; border-radius: 9px; }
-.atab {
-  flex: 1; padding: 8px;
-  border: none; background: transparent;
-  border-radius: 7px;
-  font-size: 12px; font-weight: 700;
-  cursor: pointer; font-family: inherit;
-  color: var(--text3); transition: all 0.15s;
-}
-.atab.active { background: var(--surface); color: var(--accent); box-shadow: var(--shadow); }
-
-/* tag list */
-.tglist { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 12px; min-height: 36px; }
-.tg {
-  display: flex; align-items: center; gap: 6px;
-  padding: 5px 10px;
-  background: var(--surface2); border: 1px solid var(--border2);
-  border-radius: 7px; font-size: 12px; font-weight: 600;
-}
-.tgdot { width: 9px; height: 9px; border-radius: 3px; flex-shrink:0; }
-.tgdel { background: none; border: none; cursor: pointer; color: var(--text3); font-size: 15px; padding: 0; line-height:1; }
-.tgdel:hover { color: var(--danger); }
-.addrow { display: flex; gap: 7px; margin-top: 6px; }
-.addrow input[type=text] {
-  flex: 1; padding: 9px 12px;
-  border: 1.5px solid var(--border2); border-radius: var(--radius-sm);
-  font-size: 13px; font-family: inherit; background: var(--surface2); color: var(--text);
-  outline: none; transition: border-color 0.15s;
-}
-.addrow input[type=text]:focus { border-color: var(--accent); }
-.addrow input[type=color] {
-  width: 38px; padding: 4px;
-  border: 1.5px solid var(--border2); border-radius: var(--radius-sm);
-  cursor: pointer; background: var(--surface2);
-}
-.addrow button {
-  padding: 9px 16px;
-  background: var(--accent); border: none;
-  border-radius: var(--radius-sm);
-  color: #fff; font-size: 12px; font-weight: 700;
-  cursor: pointer; font-family: inherit;
-  white-space: nowrap;
-  transition: background 0.12s;
-}
-.addrow button:hover { background: var(--accent-hover); }
-
-/* ── TOAST ── */
-.toast {
-  position: fixed; bottom: 22px; left: 50%;
-  transform: translateX(-50%) translateY(70px);
-  background: #1c2333; color: #fff;
-  padding: 11px 22px; border-radius: 10px;
-  font-size: 13px; font-weight: 500;
-  z-index: 9999; opacity: 0;
-  transition: all 0.28s ease;
-  pointer-events: none;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-  max-width: 90vw; text-align: center;
-}
-.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-.toast.ok { border-left: 3px solid #4ade80; }
-.toast.er { border-left: 3px solid #f87171; }
-
-/* ── LOADING OVERLAY ── */
-#loadingOverlay {
-  position: fixed; inset: 0;
-  background: rgba(255,255,255,0.7);
-  backdrop-filter: blur(3px);
-  z-index: 800;
-  display: none; align-items: center; justify-content: center;
-  flex-direction: column; gap: 12px;
-}
-.spinner {
-  width: 36px; height: 36px;
-  border: 3px solid var(--border2);
-  border-top-color: var(--accent);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-#loadingOverlay p { font-size: 13px; color: var(--text2); }
-
-@keyframes spin { to { transform: rotate(360deg); } }
-@keyframes shake {
-  0%,100%{transform:translateX(0)}
-  20%{transform:translateX(-10px)}
-  40%{transform:translateX(10px)}
-  60%{transform:translateX(-6px)}
-  80%{transform:translateX(6px)}
-}
-@keyframes pulse {
-  0%,100%{opacity:1} 50%{opacity:0.4}
-}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-10px)}40%{transform:translateX(10px)}60%{transform:translateX(-6px)}80%{transform:translateX(6px)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 </style>
 </head>
 <body>
 
-<!-- ══ LOCK ══ -->
-<div id="lockScreen">
-  <div class="lock-card">
-    <div class="lock-logo">
-      <div class="dot">📋</div>
-      <span>연차 · 반차 현황판</span>
-    </div>
-    <h2>비밀번호를 입력하세요</h2>
-    <input class="lock-input" type="password" id="lockPw" maxlength="8"
-      placeholder="••••" autocomplete="off"
-      onkeydown="if(event.key==='Enter')tryUnlock()">
-    <button class="lock-btn" onclick="tryUnlock()">로그인</button>
-    <div class="lock-err" id="lockErr"></div>
+<!-- LOCK -->
+<div id="lock">
+  <div class="lcard">
+    <div class="llogo"><div class="ico">📋</div><span>연차 · 반차 현황판</span></div>
+    <p>비밀번호를 입력하세요</p>
+    <input class="linput" type="password" id="lpw" maxlength="8" placeholder="••••" autocomplete="off">
+    <button class="lbtn" onclick="tryUnlock()">로그인</button>
+    <div class="lerr" id="lerr"></div>
   </div>
 </div>
 
-<!-- ══ HEADER ══ -->
-<div id="header">
-  <div class="header-logo">
-    <div class="dot">📋</div>
-    <span>연차 · 반차 현황판</span>
-  </div>
-  <div class="header-right">
-    <div class="sync-status">
-      <div class="sync-dot" id="syncDot"></div>
-      <span id="syncTxt">-</span>
-    </div>
-    <button class="hbtn primary" onclick="manualSync()">🔄 동기화</button>
+<!-- HEADER -->
+<div id="hdr">
+  <div class="hlogo"><div class="ico">📋</div><span>연차 · 반차 현황판</span></div>
+  <div class="hright">
+    <div class="sync"><div class="sdot" id="sdot"></div><span id="stxt">-</span></div>
+    <button class="hbtn acc" onclick="syncNow()">🔄 동기화</button>
     <button class="hbtn" onclick="openAdmin()">⚙️ 관리</button>
     <button class="hbtn" onclick="reLock()">🔒 잠금</button>
   </div>
 </div>
 
-<!-- ══ SIDEBAR ══ -->
-<div id="sidebar"></div>
+<!-- SIDEBAR -->
+<div id="sb"></div>
 
-<!-- ══ APP ══ -->
+<!-- APP -->
 <div id="app">
   <div id="main">
-    <!-- CALENDAR -->
-    <div id="calPanel">
-      <div class="cal-top">
-        <h2 id="calTitle"></h2>
-        <div class="sub" id="calSub"></div>
-      </div>
-      <div class="legend" id="legend"></div>
-      <div class="cal-scroll">
-        <div class="cal-dow" id="calDow"></div>
-        <div class="cal-grid" id="calGrid"></div>
+    <div id="calP">
+      <div class="ctop"><h2 id="ctitle"></h2><div class="sub" id="csub"></div></div>
+      <div class="lgbar" id="lgbar"></div>
+      <div class="cscroll">
+        <div class="cdow" id="cdow"></div>
+        <div class="cgrid" id="cgrid"></div>
       </div>
     </div>
-    <!-- TABLE -->
-    <div id="tblPanel">
-      <div class="tbl-top">
-        <div>
-          <h3 id="tblTitle"></h3>
-          <div class="sub">연차 = 1일 · 반차 = 0.5일 기준 집계</div>
-        </div>
-      </div>
-      <div class="tbl-scroll">
-        <table id="leaveTable">
-          <thead id="tblHead"></thead>
-          <tbody id="tblBody"></tbody>
-        </table>
-      </div>
+    <div id="tblP">
+      <div class="ttop"><div><h3 id="ttitle"></h3><div class="sub">연차=1일 · 반차=0.5일 기준 집계</div></div></div>
+      <div class="tscroll"><table id="ltbl"><thead id="thead"></thead><tbody id="tbody"></tbody></table></div>
     </div>
   </div>
 </div>
 
-<!-- ══ DATE MODAL ══ -->
-<div class="overlay" id="dateModal" style="display:none" onclick="if(event.target===this)closeDateModal()">
+<!-- DATE MODAL -->
+<div class="ov" id="dModal" style="display:none" onclick="if(event.target===this)closeDM()">
   <div class="modal">
-    <button class="mclose" onclick="closeDateModal()">×</button>
-    <h3 id="dModalTitle"></h3>
-    <div class="modal-sub" id="dModalSub"></div>
-    <div id="existGroup" style="display:none">
-      <div class="flabel">등록된 휴가</div>
+    <button class="mcls" onclick="closeDM()">×</button>
+    <h3 id="dmTitle"></h3>
+    <div class="msub" id="dmSub"></div>
+    <div id="exGrp" style="display:none">
+      <div class="flbl">등록된 휴가</div>
       <div class="elist" id="eList"></div>
     </div>
-    <div class="fgroup">
-      <div class="flabel">직원 선택</div>
-      <input list="empDL" class="finput" id="empInput" placeholder="이름 선택 또는 직접 입력">
+    <div class="fg">
+      <div class="flbl">직원 선택</div>
+      <input list="empDL" class="fi" id="empIn" placeholder="이름 선택 또는 직접 입력">
       <datalist id="empDL"></datalist>
     </div>
-    <div class="fgroup">
-      <div class="flabel">휴가 유형</div>
-      <div class="type-chips" id="typeChips"></div>
+    <div class="fg">
+      <div class="flbl">휴가 유형</div>
+      <div class="tchips" id="tChips"></div>
     </div>
-    <div class="mfooter">
-      <button class="btn btn-ghost" onclick="closeDateModal()">닫기</button>
-      <button class="btn btn-primary" onclick="saveEntry()">저장</button>
+    <div class="mft">
+      <button class="btn bgho" onclick="closeDM()">닫기</button>
+      <button class="btn bpri" onclick="saveEntry()">저장</button>
     </div>
   </div>
 </div>
 
-<!-- ══ ADMIN MODAL ══ -->
-<div class="overlay" id="adminModal" style="display:none" onclick="if(event.target===this)closeAdmin()">
-  <div class="modal modal-lg">
-    <button class="mclose" onclick="closeAdmin()">×</button>
+<!-- ADMIN MODAL -->
+<div class="ov" id="aModal" style="display:none" onclick="if(event.target===this)closeAdmin()">
+  <div class="modal mlg">
+    <button class="mcls" onclick="closeAdmin()">×</button>
     <h3>관리자 설정</h3>
-    <div class="modal-sub">직원 목록과 휴가 유형을 관리합니다</div>
+    <div class="msub">직원 목록과 휴가 유형을 관리합니다</div>
     <div class="atabs">
-      <button class="atab active" onclick="adminTab(0)">👤 직원 관리</button>
-      <button class="atab" onclick="adminTab(1)">📋 휴가 유형</button>
-      <button class="atab" onclick="adminTab(2)">🔧 GitHub 설정</button>
+      <button class="atab on" onclick="aTab(0)">👤 직원 관리</button>
+      <button class="atab" onclick="aTab(1)">📋 휴가 유형</button>
     </div>
     <div id="aEmp">
-      <div class="tglist" id="empTgList"></div>
-      <div class="addrow">
-        <input type="text" id="newEmpName" placeholder="직원 이름">
-        <input type="color" id="newEmpColor" value="#3b82f6" title="색상">
+      <div class="tglist" id="empTg"></div>
+      <div class="arow">
+        <input type="text" id="newEn" placeholder="직원 이름">
+        <input type="color" id="newEc" value="#3b82f6">
         <button onclick="addEmp()">추가</button>
       </div>
     </div>
     <div id="aType" style="display:none">
-      <div class="tglist" id="typeTgList"></div>
-      <div class="addrow">
-        <input type="text" id="newTypeName" placeholder="유형 이름 (예: 특별휴가)">
+      <div class="tglist" id="typeTg"></div>
+      <div class="arow">
+        <input type="text" id="newTn" placeholder="유형 이름 (예: 특별휴가)">
         <button onclick="addType()">추가</button>
-      </div>
-    </div>
-    <div id="aGH" style="display:none">
-      <div class="fgroup">
-        <div class="flabel">GitHub 사용자명 (소유자)</div>
-        <input class="finput" id="ghOwner" placeholder="예: myusername">
-      </div>
-      <div class="fgroup">
-        <div class="flabel">저장소 이름</div>
-        <input class="finput" id="ghRepo" placeholder="예: leave-manager">
-      </div>
-      <div class="fgroup">
-        <div class="flabel">Personal Access Token</div>
-        <input class="finput" id="ghToken" type="password" placeholder="ghp_xxxxxxxxxxxx">
-      </div>
-      <div style="font-size:11px;color:var(--text3);margin-bottom:14px;line-height:1.7">
-        ⚠️ Token은 이 기기의 브라우저에만 저장됩니다.<br>
-        Token 권한: <b>Contents: Read and Write</b> 만 필요합니다.<br>
-        저장소에 <b>data.json</b> 파일이 없으면 자동 생성됩니다.
-      </div>
-      <div class="mfooter" style="margin-top:0">
-        <button class="btn btn-primary" onclick="saveGHConfig()">설정 저장</button>
-        <button class="btn btn-ghost" onclick="testGHConfig()">연결 테스트</button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- ══ LOADING ══ -->
-<div id="loadingOverlay">
-  <div class="spinner"></div>
-  <p id="loadingMsg">데이터를 불러오는 중...</p>
-</div>
+<!-- LOADING -->
+<div id="ldov"><div class="spin"></div><p id="ldmsg">처리 중...</p></div>
 
-<!-- ══ TOAST ══ -->
+<!-- TOAST -->
 <div class="toast" id="toast"></div>
 
 <script>
-/* ════════════════════════════════════════
-   CONFIG  ← 여기를 직접 수정하거나
-            관리자 > GitHub 설정에서 입력
-════════════════════════════════════════ */
-const HARDCODED = {
-  owner: 'real4goon',
-  repo:  'refresh-plan-2026-',
-  token: '',   // 보안상 비워둠. 관리자 > GitHub 설정에서 입력
-};
-const DATA_FILE  = 'data.json';    // 저장소 안에 생성될 파일명
-const PW         = '4114';
-const YEAR       = 2026;
-const MONTH_NUMS = [4,5,6,7,8,9,10,11,12];
+/* ══════════════════════
+   CONFIG
+══════════════════════ */
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzXMH59oDc3ChsVhdmf_dHoMyNM1C0e2A44xZf_OWsTX18NYXYlSruXGNfnAJK03Xxqng/exec';
+const PW      = '4114';
+const YEAR    = 2026;
+const MONTHS  = [4,5,6,7,8,9,10,11,12];
 
-/* ════════════════════════════════════
-   STATE
-════════════════════════════════════ */
-let DB = {
-  employees: [
-    {name:'이상균', color:'#e11d48'},
-    {name:'김기우', color:'#7c3aed'},
-    {name:'김영선', color:'#1d4ed8'},
-    {name:'공규식', color:'#059669'},
-    {name:'김동현', color:'#d97706'},
-    {name:'최경수', color:'#dc2626'},
-    {name:'김창호', color:'#4f46e5'},
-    {name:'이승범', color:'#0891b2'},
-    {name:'황태준', color:'#ea580c'},
-    {name:'송상율', color:'#9333ea'},
-    {name:'이지혜', color:'#16a34a'},
-    {name:'이지현', color:'#0d9488'},
-    {name:'장명희', color:'#db2777'},
+/* ══════════════════════
+   DEFAULT DB
+══════════════════════ */
+const DEFAULT_DB = {
+  employees:[
+    {name:'이상균',color:'#e11d48'},{name:'김기우',color:'#7c3aed'},
+    {name:'김영선',color:'#1d4ed8'},{name:'공규식',color:'#059669'},
+    {name:'김동현',color:'#d97706'},{name:'최경수',color:'#dc2626'},
+    {name:'김창호',color:'#4f46e5'},{name:'이승범',color:'#0891b2'},
+    {name:'황태준',color:'#ea580c'},{name:'송상율',color:'#9333ea'},
+    {name:'이지혜',color:'#16a34a'},{name:'이지현',color:'#0d9488'},
+    {name:'장명희',color:'#db2777'},
   ],
-  leaveTypes: ['연차','오전반휴','오후반휴'],
-  entries: {}
+  leaveTypes:['연차','오전반휴','오후반휴'],
+  entries:{}
 };
 
-let curMonth  = 4;
-let selType   = '';
-let selDate   = '';
-let ghFileSha = '';       // GitHub API: 파일 수정 시 필요한 sha
-let adminTabIdx = 0;
+let DB = JSON.parse(JSON.stringify(DEFAULT_DB));
+let curM   = 4;
+let selTyp = '';
+let selDt  = '';
 
-/* ════════════════════════════════════
-   GITHUB CONFIG (localStorage 우선)
-════════════════════════════════════ */
-function getGH() {
-  return {
-    owner: localStorage.getItem('gh_owner') || HARDCODED.owner,
-    repo:  localStorage.getItem('gh_repo')  || HARDCODED.repo,
-    token: localStorage.getItem('gh_token') || HARDCODED.token,
-  };
-}
-function ghReady() {
-  const g = getGH();
-  return g.owner && g.repo && g.token &&
-         !g.owner.startsWith('YOUR_') && !g.token.startsWith('YOUR_');
-}
-function ghApiUrl() {
-  const g = getGH();
-  return `https://api.github.com/repos/${g.owner}/${g.repo}/contents/${DATA_FILE}`;
-}
-function ghHeaders() {
-  return {
-    'Authorization': `token ${getGH().token}`,
-    'Accept': 'application/vnd.github.v3+json',
-    'Content-Type': 'application/json',
-  };
+/* ══════════════════════
+   GAS API
+══════════════════════ */
+async function gasRead() {
+  setSS('ld','불러오는 중...');
+  try {
+    const res = await fetch(GAS_URL + '?t=' + Date.now());
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const json = await res.json();
+    if (json && json.employees) DB = json;
+    else if (Object.keys(json).length === 0) {
+      // 빈 시트 → 기본값 저장
+      await gasWrite();
+    }
+    setSS('ok','동기화 완료 · ' + nowTime());
+    return true;
+  } catch(e) {
+    setSS('er','읽기 실패');
+    toast('데이터 불러오기 실패: ' + e.message,'er');
+    return false;
+  }
 }
 
-/* ════════════════════════════════════
-   LOCK / UNLOCK
-════════════════════════════════════ */
-function tryUnlock() {
-  const v = document.getElementById('lockPw').value;
-  if (v === PW) {
-    document.getElementById('lockScreen').style.display = 'none';
-    document.getElementById('header').style.display = 'flex';
-    document.getElementById('sidebar').style.display = 'flex';
-    document.getElementById('app').style.display = 'block';
+async function gasWrite() {
+  setSS('ld','저장 중...');
+  try {
+    const res = await fetch(GAS_URL, {
+      method:'POST',
+      headers:{'Content-Type':'text/plain'},
+      body: JSON.stringify({pw: PW, data: DB})
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const json = await res.json();
+    if (!json.ok) throw new Error(json.msg || '저장 실패');
+    setSS('ok','저장 완료 · ' + nowTime());
+    return true;
+  } catch(e) {
+    setSS('er','저장 실패');
+    toast('저장 실패: ' + e.message,'er');
+    return false;
+  }
+}
+
+async function syncNow() {
+  showLD('최신 데이터 불러오는 중...');
+  const ok = await gasRead();
+  hideLD();
+  if (ok) { renderAll(); toast('최신 데이터로 업데이트됐습니다','ok'); }
+}
+
+/* ══════════════════════
+   SYNC STATUS
+══════════════════════ */
+function setSS(s,m){
+  document.getElementById('sdot').className='sdot '+s;
+  document.getElementById('stxt').textContent=m;
+}
+function nowTime(){return new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})}
+
+/* ══════════════════════
+   LOCK
+══════════════════════ */
+document.getElementById('lpw').addEventListener('keydown',e=>{if(e.key==='Enter')tryUnlock()});
+function tryUnlock(){
+  if(document.getElementById('lpw').value===PW){
+    document.getElementById('lock').style.display='none';
+    document.getElementById('hdr').style.display='flex';
+    document.getElementById('sb').style.display='flex';
+    document.getElementById('app').style.display='block';
     init();
   } else {
-    const el = document.getElementById('lockPw');
-    el.classList.add('err-shake');
-    setTimeout(() => el.classList.remove('err-shake'), 400);
-    document.getElementById('lockErr').textContent = '비밀번호가 올바르지 않습니다';
+    const el=document.getElementById('lpw');
+    el.classList.add('shake');
+    setTimeout(()=>el.classList.remove('shake'),380);
+    document.getElementById('lerr').textContent='비밀번호가 올바르지 않습니다';
   }
 }
-document.getElementById('lockPw').addEventListener('keydown', e => { if(e.key==='Enter') tryUnlock(); });
-
-function reLock() {
-  document.getElementById('header').style.display = 'none';
-  document.getElementById('sidebar').style.display = 'none';
-  document.getElementById('app').style.display = 'none';
-  document.getElementById('lockScreen').style.display = 'flex';
-  document.getElementById('lockPw').value = '';
-  document.getElementById('lockErr').textContent = '';
+function reLock(){
+  ['hdr','sb','app'].forEach(id=>document.getElementById(id).style.display='none');
+  document.getElementById('lock').style.display='flex';
+  document.getElementById('lpw').value='';
+  document.getElementById('lerr').textContent='';
 }
 
-/* ════════════════════════════════════
-   GITHUB API  READ / WRITE
-════════════════════════════════════ */
-async function ghRead() {
-  if (!ghReady()) {
-    setSyncStatus('err', 'GitHub 미설정');
-    showToast('관리자 > GitHub 설정을 먼저 해주세요', 'er');
-    return false;
-  }
-  setSyncStatus('loading', '불러오는 중...');
-  try {
-    const res = await fetch(ghApiUrl(), { headers: ghHeaders() });
-    if (res.status === 404) {
-      // 파일 없음 → 현재 DB로 초기화
-      setSyncStatus('ok', '새 파일 생성 필요');
-      await ghWrite();
-      return true;
-    }
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const json = await res.json();
-    ghFileSha = json.sha;
-    const decoded = JSON.parse(atob(json.content.replace(/\n/g, '')));
-    // 병합: 기존 직원/타입 구조 유지하면서 entries 덮어쓰기
-    if (decoded.employees) DB.employees = decoded.employees;
-    if (decoded.leaveTypes) DB.leaveTypes = decoded.leaveTypes;
-    if (decoded.entries) DB.entries = decoded.entries;
-    setSyncStatus('ok', '동기화 완료');
-    return true;
-  } catch(e) {
-    setSyncStatus('err', '읽기 실패');
-    showToast('GitHub에서 데이터를 읽지 못했습니다: ' + e.message, 'er');
-    return false;
-  }
-}
-
-async function ghWrite() {
-  if (!ghReady()) return false;
-  setSyncStatus('loading', '저장 중...');
-  try {
-    const content = btoa(unescape(encodeURIComponent(JSON.stringify(DB, null, 2))));
-    const body = { message: `update: ${new Date().toLocaleString('ko-KR')}`, content };
-    if (ghFileSha) body.sha = ghFileSha;
-    const res = await fetch(ghApiUrl(), {
-      method: 'PUT', headers: ghHeaders(), body: JSON.stringify(body),
-    });
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.message || `HTTP ${res.status}`);
-    }
-    const json = await res.json();
-    ghFileSha = json.content.sha;
-    setSyncStatus('ok', '저장 완료 · ' + new Date().toLocaleTimeString('ko-KR', {hour:'2-digit',minute:'2-digit'}));
-    return true;
-  } catch(e) {
-    setSyncStatus('err', '저장 실패');
-    showToast('GitHub 저장 실패: ' + e.message, 'er');
-    return false;
-  }
-}
-
-async function manualSync() {
-  showLoading('GitHub에서 데이터를 불러오는 중...');
-  const ok = await ghRead();
-  hideLoading();
-  if (ok) { renderAll(); showToast('최신 데이터로 업데이트되었습니다', 'ok'); }
-}
-
-/* ════════════════════════════════════
-   SYNC STATUS
-════════════════════════════════════ */
-function setSyncStatus(state, msg) {
-  const dot = document.getElementById('syncDot');
-  const txt = document.getElementById('syncTxt');
-  dot.className = 'sync-dot ' + state;
-  txt.textContent = msg;
-}
-
-/* ════════════════════════════════════
+/* ══════════════════════
    INIT
-════════════════════════════════════ */
-async function init() {
-  renderSidebar();
-  if (ghReady()) {
-    showLoading('GitHub에서 데이터를 불러오는 중...');
-    await ghRead();
-    hideLoading();
-  } else {
-    setSyncStatus('err', 'GitHub 미설정');
-  }
+══════════════════════ */
+async function init(){
+  renderSB();
+  showLD('구글 시트에서 데이터를 불러오는 중...');
+  await gasRead();
+  hideLD();
   renderAll();
 }
 
-/* ════════════════════════════════════
+/* ══════════════════════
    SIDEBAR
-════════════════════════════════════ */
-function renderSidebar() {
-  const sb = document.getElementById('sidebar');
-  sb.innerHTML = '';
-  MONTH_NUMS.forEach(m => {
-    const d = document.createElement('div');
-    d.className = 'mtab' + (m === curMonth ? ' active' : '');
-    d.innerHTML = `<span class="mn">${m}</span><span class="ml">월</span>`;
-    d.onclick = () => { curMonth = m; renderSidebar(); renderAll(); };
+══════════════════════ */
+function renderSB(){
+  const sb=document.getElementById('sb');
+  sb.innerHTML='';
+  MONTHS.forEach(m=>{
+    const d=document.createElement('div');
+    d.className='mtab'+(m===curM?' on':'');
+    d.innerHTML=`<span class="mn">${m}</span><span class="ml">월</span>`;
+    d.onclick=()=>{curM=m;renderSB();renderAll()};
     sb.appendChild(d);
   });
 }
 
-/* ════════════════════════════════════
+/* ══════════════════════
    RENDER ALL
-════════════════════════════════════ */
-function renderAll() {
-  renderLegend();
-  renderCal();
-  renderTable();
-}
+══════════════════════ */
+function renderAll(){renderLg();renderCal();renderTbl()}
 
-/* ════════════════════════════════════
+/* ══════════════════════
    LEGEND
-════════════════════════════════════ */
-function renderLegend() {
-  document.getElementById('legend').innerHTML = DB.employees.map(e =>
-    `<div class="leg-item"><div class="leg-dot" style="background:${e.color}"></div>${e.name}</div>`
-  ).join('');
+══════════════════════ */
+function renderLg(){
+  document.getElementById('lgbar').innerHTML=
+    DB.employees.map(e=>`<div class="lgit"><div class="lgdot" style="background:${e.color}"></div>${e.name}</div>`).join('');
 }
 
-/* ════════════════════════════════════
+/* ══════════════════════
    CALENDAR
-════════════════════════════════════ */
-function dk(y,m,d) { return `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`; }
+══════════════════════ */
+function dk(y,m,d){return `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`}
 
-function renderCal() {
-  const m = curMonth;
-  document.getElementById('calTitle').textContent = `${YEAR}년 ${m}월`;
-  const cnt = Object.keys(DB.entries)
-    .filter(k => k.startsWith(`${YEAR}-${String(m).padStart(2,'0')}-`))
-    .reduce((a,k) => a + (DB.entries[k]||[]).length, 0);
-  document.getElementById('calSub').textContent = `총 ${cnt}건 등록`;
+function renderCal(){
+  const m=curM;
+  document.getElementById('ctitle').textContent=`${YEAR}년 ${m}월`;
+  const cnt=Object.keys(DB.entries)
+    .filter(k=>k.startsWith(`${YEAR}-${String(m).padStart(2,'0')}-`))
+    .reduce((a,k)=>a+(DB.entries[k]||[]).length,0);
+  document.getElementById('csub').textContent=`총 ${cnt}건 등록`;
 
-  // dow labels
-  const dowEl = document.getElementById('calDow');
-  dowEl.innerHTML = ['일','월','화','수','목','금','토']
-    .map(d => `<div class="dow-cell">${d}</div>`).join('');
+  document.getElementById('cdow').innerHTML=
+    ['일','월','화','수','목','금','토'].map(d=>`<div class="dcell">${d}</div>`).join('');
 
-  const grid = document.getElementById('calGrid');
-  grid.innerHTML = '';
-  const first = new Date(YEAR, m-1, 1);
-  const lastDay = new Date(YEAR, m, 0).getDate();
-  const startDow = first.getDay();
-  const today = new Date();
+  const grid=document.getElementById('cgrid');
+  grid.innerHTML='';
+  const lastDay=new Date(YEAR,m,0).getDate();
+  const startDow=new Date(YEAR,m-1,1).getDay();
+  const today=new Date();
 
-  for (let i=0; i<startDow; i++) {
-    const el = document.createElement('div');
-    el.className = 'cal-cell empty'; grid.appendChild(el);
+  for(let i=0;i<startDow;i++){
+    const e=document.createElement('div');e.className='ccell emp';grid.appendChild(e);
   }
-  for (let d=1; d<=lastDay; d++) {
-    const key = dk(YEAR,m,d);
-    const entries = DB.entries[key] || [];
-    const dow = new Date(YEAR,m-1,d).getDay();
-    const isToday = today.getFullYear()===YEAR && today.getMonth()===m-1 && today.getDate()===d;
-
-    const cell = document.createElement('div');
-    cell.className = 'cal-cell'
-      + (isToday ? ' today' : '')
-      + (dow===0 ? ' sun' : '') + (dow===6 ? ' sat' : '');
-
-    const dnum = document.createElement('div');
-    dnum.className = 'dnum'; dnum.textContent = d;
-    cell.appendChild(dnum);
-
-    const chips = document.createElement('div');
-    chips.className = 'cell-entries';
-    const show = entries.slice(0,3);
-    const rest = entries.length - show.length;
-    show.forEach(e => {
-      const emp = DB.employees.find(x=>x.name===e.name);
-      const color = emp ? emp.color : '#aaa';
-      const chip = document.createElement('div');
-      chip.className = 'cell-chip';
-      chip.style.background = color;
-      chip.title = `${e.name} - ${e.type}`;
-      chip.textContent = e.name.slice(0,1) + ' ' + typeShort(e.type);
-      chips.appendChild(chip);
+  for(let d=1;d<=lastDay;d++){
+    const key=dk(YEAR,m,d);
+    const ents=DB.entries[key]||[];
+    const dow=new Date(YEAR,m-1,d).getDay();
+    const isToday=today.getFullYear()===YEAR&&today.getMonth()===m-1&&today.getDate()===d;
+    const cell=document.createElement('div');
+    cell.className='ccell'+(isToday?' today':'')+(dow===0?' sun':dow===6?' sat':'');
+    const dno=document.createElement('div');dno.className='dno';dno.textContent=d;
+    cell.appendChild(dno);
+    const chips=document.createElement('div');chips.className='cchips';
+    ents.slice(0,3).forEach(e=>{
+      const emp=DB.employees.find(x=>x.name===e.name);
+      const c=emp?emp.color:'#999';
+      const ch=document.createElement('div');
+      ch.className='cchip';ch.style.background=c;
+      ch.title=`${e.name} - ${e.type}`;
+      ch.textContent=e.name.slice(0,1)+' '+tShort(e.type);
+      chips.appendChild(ch);
     });
-    if (rest > 0) {
-      const more = document.createElement('div');
-      more.className = 'cell-more'; more.textContent = `+${rest}명`;
-      chips.appendChild(more);
-    }
+    if(ents.length>3){const more=document.createElement('div');more.className='cmore';more.textContent=`+${ents.length-3}`;chips.appendChild(more)}
     cell.appendChild(chips);
-    cell.onclick = () => openDateModal(key, d, m);
+    cell.onclick=()=>openDM(key,d,m);
     grid.appendChild(cell);
   }
 }
 
-function typeShort(t) {
-  if (t==='연차') return '연';
-  if (t==='오전반휴') return '오전';
-  if (t==='오후반휴') return '오후';
-  return t.slice(0,2);
-}
-function typeVal(t) {
-  if (t==='연차') return 1;
-  if (t==='오전반휴'||t==='오후반휴') return 0.5;
-  return 0.5;
-}
-function fmtDay(v) { return v===0?'-':(v%1===0?v+'일':v+'일'); }
+function tShort(t){return t==='연차'?'연':t==='오전반휴'?'오전':t==='오후반휴'?'오후':t.slice(0,2)}
+function tVal(t){return t==='연차'?1:(t==='오전반휴'||t==='오후반휴')?.5:.5}
+function fDay(v){return v===0?'-':v%1===0?v+'일':v+'일'}
 
-/* ════════════════════════════════════
+/* ══════════════════════
    TABLE
-════════════════════════════════════ */
-function renderTable() {
-  const m = curMonth;
-  document.getElementById('tblTitle').textContent = `${m}월 직원별 현황`;
-  const lastDay = new Date(YEAR,m,0).getDate();
+══════════════════════ */
+function renderTbl(){
+  const m=curM;
+  document.getElementById('ttitle').textContent=`${m}월 직원별 현황`;
+  const lastDay=new Date(YEAR,m,0).getDate();
 
-  // HEAD
-  const thead = document.getElementById('tblHead');
-  let hrow = `<tr><th class="fcol">이름</th>`;
-  for (let d=1; d<=lastDay; d++) {
-    const dow = new Date(YEAR,m-1,d).getDay();
-    const cls = dow===0?' class="sun-col"':dow===6?' class="sat-col"':'';
-    hrow += `<th${cls}>${d}</th>`;
+  // head
+  let hrow=`<tr><th class="fc">이름</th>`;
+  for(let d=1;d<=lastDay;d++){
+    const dow=new Date(YEAR,m-1,d).getDay();
+    const cls=dow===0?' class="sun-h"':dow===6?' class="sat-h"':'';
+    hrow+=`<th${cls}>${d}</th>`;
   }
-  hrow += `<th class="scol">월계</th><th class="scol2">누적</th></tr>`;
-  thead.innerHTML = hrow;
+  hrow+=`<th class="sc">월계</th><th class="sc2">누적</th></tr>`;
+  document.getElementById('thead').innerHTML=hrow;
 
-  // BODY
-  const tbody = document.getElementById('tblBody');
-  tbody.innerHTML = '';
-  const colTotals = new Array(lastDay).fill(0);
+  const tbody=document.getElementById('tbody');
+  tbody.innerHTML='';
+  const colT=new Array(lastDay).fill(0);
 
-  DB.employees.forEach(emp => {
-    const tr = document.createElement('tr');
-    const nameTd = document.createElement('td');
-    nameTd.className = 'fcol'; nameTd.textContent = emp.name;
-    tr.appendChild(nameTd);
-
-    let monthSum = 0;
-    for (let d=1; d<=lastDay; d++) {
-      const key = dk(YEAR,m,d);
-      const empE = (DB.entries[key]||[]).filter(x=>x.name===emp.name);
-      const td = document.createElement('td');
-      td.style.padding = '4px 3px';
-      empE.forEach(e => {
-        const b = document.createElement('span');
-        b.className = 'tbadge';
-        b.style.background = emp.color;
-        b.textContent = typeShort(e.type);
-        b.title = e.type;
+  DB.employees.forEach(emp=>{
+    const tr=document.createElement('tr');
+    const ntd=document.createElement('td');ntd.className='fc';ntd.textContent=emp.name;tr.appendChild(ntd);
+    let mSum=0;
+    for(let d=1;d<=lastDay;d++){
+      const key=dk(YEAR,m,d);
+      const ee=(DB.entries[key]||[]).filter(x=>x.name===emp.name);
+      const td=document.createElement('td');td.style.padding='4px 3px';
+      ee.forEach(e=>{
+        const b=document.createElement('span');b.className='tbdg';
+        b.style.background=emp.color;b.textContent=tShort(e.type);b.title=e.type;
         td.appendChild(b);
-        const v = typeVal(e.type);
-        monthSum += v; colTotals[d-1] += v;
+        const v=tVal(e.type);mSum+=v;colT[d-1]+=v;
       });
       tr.appendChild(td);
     }
-
     // cumulative
-    let cumSum = 0;
-    MONTH_NUMS.forEach(cm => {
-      const cl = new Date(YEAR,cm,0).getDate();
-      for (let cd=1; cd<=cl; cd++) {
-        const ck = dk(YEAR,cm,cd);
-        (DB.entries[ck]||[]).filter(x=>x.name===emp.name).forEach(e => { cumSum+=typeVal(e.type); });
+    let cSum=0;
+    MONTHS.forEach(cm=>{
+      const cl=new Date(YEAR,cm,0).getDate();
+      for(let cd=1;cd<=cl;cd++){
+        (DB.entries[dk(YEAR,cm,cd)]||[]).filter(x=>x.name===emp.name).forEach(e=>{cSum+=tVal(e.type)});
       }
     });
-
-    const mTd = document.createElement('td');
-    mTd.className = 'scol'; mTd.textContent = fmtDay(monthSum);
-    tr.appendChild(mTd);
-    const cTd = document.createElement('td');
-    cTd.className = 'scol2'; cTd.textContent = fmtDay(cumSum);
-    tr.appendChild(cTd);
+    const mtd=document.createElement('td');mtd.className='sc';mtd.textContent=fDay(mSum);tr.appendChild(mtd);
+    const ctd=document.createElement('td');ctd.className='sc2';ctd.textContent=fDay(cSum);tr.appendChild(ctd);
     tbody.appendChild(tr);
   });
 
-  // SUM ROW
-  const sumTr = document.createElement('tr');
-  sumTr.className = 'sum-row';
-  const sn = document.createElement('td'); sn.className='fcol'; sn.textContent='합계';
-  sumTr.appendChild(sn);
-  let grandTotal = 0;
-  for (let d=0; d<lastDay; d++) {
-    const td = document.createElement('td');
-    td.textContent = colTotals[d]>0 ? fmtDay(colTotals[d]) : '';
-    sumTr.appendChild(td);
-    grandTotal += colTotals[d];
+  // sum row
+  const sr=document.createElement('tr');sr.className='sumr';
+  const sn=document.createElement('td');sn.className='fc';sn.textContent='합계';sr.appendChild(sn);
+  let gt=0;
+  for(let d=0;d<lastDay;d++){
+    const td=document.createElement('td');td.textContent=colT[d]>0?fDay(colT[d]):'';sr.appendChild(td);gt+=colT[d];
   }
-  const gt = document.createElement('td'); gt.className='scol'; gt.textContent=fmtDay(grandTotal);
-  sumTr.appendChild(gt);
-  const gt2 = document.createElement('td'); gt2.className='scol2'; gt2.textContent='';
-  sumTr.appendChild(gt2);
-  tbody.appendChild(sumTr);
+  const gtd=document.createElement('td');gtd.className='sc';gtd.textContent=fDay(gt);sr.appendChild(gtd);
+  const gtd2=document.createElement('td');gtd2.className='sc2';gtd2.textContent='';sr.appendChild(gtd2);
+  tbody.appendChild(sr);
 }
 
-/* ════════════════════════════════════
+/* ══════════════════════
    DATE MODAL
-════════════════════════════════════ */
-function openDateModal(key, d, m) {
-  selDate = key;
-  selType = DB.leaveTypes[0] || '';
-  const dow = new Date(YEAR,m-1,d).getDay();
-  const dowNames = ['일','월','화','수','목','금','토'];
-  document.getElementById('dModalTitle').textContent = `${YEAR}년 ${m}월 ${d}일 (${dowNames[dow]})`;
-  document.getElementById('dModalSub').textContent = '직원과 휴가 유형을 선택 후 저장하세요';
-  renderEntryList(key);
-  // datalist
-  const dl = document.getElementById('empDL');
-  dl.innerHTML = DB.employees.map(e=>`<option value="${e.name}">`).join('');
-  document.getElementById('empInput').value = '';
-  renderTypeChips();
-  document.getElementById('dateModal').style.display = 'flex';
-  setTimeout(() => document.getElementById('empInput').focus(), 100);
+══════════════════════ */
+function openDM(key,d,m){
+  selDt=key;selTyp=DB.leaveTypes[0]||'';
+  const dnames=['일','월','화','수','목','금','토'];
+  document.getElementById('dmTitle').textContent=`${YEAR}년 ${m}월 ${d}일 (${dnames[new Date(YEAR,m-1,d).getDay()]})`;
+  document.getElementById('dmSub').textContent='직원과 휴가 유형을 선택 후 저장하세요';
+  renderEList(key);
+  document.getElementById('empDL').innerHTML=DB.employees.map(e=>`<option value="${e.name}">`).join('');
+  document.getElementById('empIn').value='';
+  renderTChips();
+  document.getElementById('dModal').style.display='flex';
+  setTimeout(()=>document.getElementById('empIn').focus(),80);
 }
-function closeDateModal() { document.getElementById('dateModal').style.display='none'; }
+function closeDM(){document.getElementById('dModal').style.display='none'}
 
-function renderEntryList(key) {
-  const entries = DB.entries[key] || [];
-  const g = document.getElementById('existGroup');
-  const el = document.getElementById('eList');
-  if (!entries.length) { g.style.display='none'; return; }
-  g.style.display = '';
-  el.innerHTML = '';
-  entries.forEach((e, i) => {
-    const emp = DB.employees.find(x=>x.name===e.name);
-    const color = emp ? emp.color : '#aaa';
-    const item = document.createElement('div');
-    item.className = 'eitem';
-    item.innerHTML = `
-      <div class="ei">
-        <span class="en" style="color:${color}">${e.name}</span>
-        <span class="et">${e.type}</span>
-      </div>
-      <button class="edel" title="삭제" onclick="deleteEntry('${key}',${i})">×</button>`;
+function renderEList(key){
+  const ents=DB.entries[key]||[];
+  const g=document.getElementById('exGrp');
+  const el=document.getElementById('eList');
+  if(!ents.length){g.style.display='none';return}
+  g.style.display='';el.innerHTML='';
+  ents.forEach((e,i)=>{
+    const emp=DB.employees.find(x=>x.name===e.name);
+    const color=emp?emp.color:'#aaa';
+    const item=document.createElement('div');item.className='eit';
+    item.innerHTML=`<div class="ei"><span class="en" style="color:${color}">${e.name}</span><span class="et">${e.type}</span></div>
+      <button class="edel" onclick="delEntry('${key}',${i})">×</button>`;
     el.appendChild(item);
   });
 }
 
-function renderTypeChips() {
-  const el = document.getElementById('typeChips');
-  el.innerHTML = '';
-  const colorMap = {'연차':'#2563eb','오전반휴':'#d97706','오후반휴':'#16a34a'};
-  DB.leaveTypes.forEach(t => {
-    const btn = document.createElement('button');
-    btn.className = 'tchip' + (t===selType?' sel':'');
-    btn.textContent = t;
-    if (t===selType) btn.style.background = colorMap[t] || '#555';
-    btn.onclick = () => { selType=t; renderTypeChips(); };
+function renderTChips(){
+  const el=document.getElementById('tChips');el.innerHTML='';
+  const cmap={'연차':'#2563eb','오전반휴':'#d97706','오후반휴':'#16a34a'};
+  DB.leaveTypes.forEach(t=>{
+    const btn=document.createElement('button');
+    btn.className='tchip'+(t===selTyp?' sel':'');btn.textContent=t;
+    if(t===selTyp)btn.style.background=cmap[t]||'#555';
+    btn.onclick=()=>{selTyp=t;renderTChips()};
     el.appendChild(btn);
   });
 }
 
-async function saveEntry() {
-  const name = document.getElementById('empInput').value.trim();
-  if (!name) { showToast('직원 이름을 입력하세요','er'); return; }
-  if (!selType) { showToast('휴가 유형을 선택하세요','er'); return; }
-  if (!DB.entries[selDate]) DB.entries[selDate] = [];
-  if (DB.entries[selDate].find(e=>e.name===name&&e.type===selType)) {
-    showToast('이미 등록된 항목입니다','er'); return;
-  }
-  DB.entries[selDate].push({ name, type: selType });
-  showLoading('저장 중...');
-  const ok = await ghWrite();
-  hideLoading();
-  renderEntryList(selDate);
-  renderAll();
-  document.getElementById('empInput').value = '';
-  if (ok) showToast(`${name} · ${selType} 등록 완료 ✓`, 'ok');
+async function saveEntry(){
+  const name=document.getElementById('empIn').value.trim();
+  if(!name){toast('직원 이름을 입력하세요','er');return}
+  if(!selTyp){toast('휴가 유형을 선택하세요','er');return}
+  if(!DB.entries[selDt])DB.entries[selDt]=[];
+  if(DB.entries[selDt].find(e=>e.name===name&&e.type===selTyp)){toast('이미 등록된 항목입니다','er');return}
+  DB.entries[selDt].push({name,type:selTyp});
+  showLD('저장 중...');
+  const ok=await gasWrite();hideLD();
+  if(ok){renderEList(selDt);renderAll();document.getElementById('empIn').value='';toast(`${name} · ${selTyp} 등록 완료 ✓`,'ok')}
 }
 
-async function deleteEntry(key, idx) {
-  if (!confirm('이 항목을 삭제하시겠습니까?')) return;
-  DB.entries[key].splice(idx, 1);
-  if (!DB.entries[key].length) delete DB.entries[key];
-  showLoading('삭제 중...');
-  const ok = await ghWrite();
-  hideLoading();
-  renderEntryList(key);
-  renderAll();
-  if (ok) showToast('삭제되었습니다', 'ok');
+async function delEntry(key,idx){
+  if(!confirm('이 항목을 삭제하시겠습니까?'))return;
+  DB.entries[key].splice(idx,1);
+  if(!DB.entries[key].length)delete DB.entries[key];
+  showLD('삭제 중...');const ok=await gasWrite();hideLD();
+  if(ok){renderEList(key);renderAll();toast('삭제되었습니다','ok')}
 }
 
-/* ════════════════════════════════════
-   ADMIN MODAL
-════════════════════════════════════ */
-function openAdmin() {
-  adminTab(0);
-  const g = getGH();
-  document.getElementById('ghOwner').value = g.owner.startsWith('YOUR_')?'':g.owner;
-  document.getElementById('ghRepo').value  = g.repo.startsWith('YOUR_')?'':g.repo;
-  document.getElementById('ghToken').value = g.token.startsWith('YOUR_')?'':g.token;
-  document.getElementById('adminModal').style.display='flex';
+/* ══════════════════════
+   ADMIN
+══════════════════════ */
+function openAdmin(){aTab(0);document.getElementById('aModal').style.display='flex'}
+function closeAdmin(){document.getElementById('aModal').style.display='none'}
+function aTab(i){
+  document.querySelectorAll('.atab').forEach((b,j)=>b.classList.toggle('on',j===i));
+  document.getElementById('aEmp').style.display=i===0?'':'none';
+  document.getElementById('aType').style.display=i===1?'':'none';
+  if(i===0)renderEmpTg();if(i===1)renderTypeTg();
 }
-function closeAdmin() { document.getElementById('adminModal').style.display='none'; }
-
-function adminTab(i) {
-  adminTabIdx = i;
-  document.querySelectorAll('.atab').forEach((b,j)=>b.classList.toggle('active',j===i));
-  document.getElementById('aEmp').style.display   = i===0?'':'none';
-  document.getElementById('aType').style.display  = i===1?'':'none';
-  document.getElementById('aGH').style.display    = i===2?'':'none';
-  if (i===0) renderEmpTags();
-  if (i===1) renderTypeTags();
+function renderEmpTg(){
+  document.getElementById('empTg').innerHTML=
+    DB.employees.map((e,i)=>`<div class="tg"><div class="tgdot" style="background:${e.color}"></div>${e.name}<button class="tgdel" onclick="rmEmp(${i})">×</button></div>`).join('');
 }
-
-function renderEmpTags() {
-  const el = document.getElementById('empTgList');
-  el.innerHTML = DB.employees.map((e,i)=>
-    `<div class="tg"><div class="tgdot" style="background:${e.color}"></div>${e.name}
-     <button class="tgdel" onclick="removeEmp(${i})">×</button></div>`
-  ).join('');
+function renderTypeTg(){
+  document.getElementById('typeTg').innerHTML=
+    DB.leaveTypes.map((t,i)=>`<div class="tg">${t}<button class="tgdel" onclick="rmType(${i})">×</button></div>`).join('');
 }
-function renderTypeTags() {
-  const el = document.getElementById('typeTgList');
-  el.innerHTML = DB.leaveTypes.map((t,i)=>
-    `<div class="tg">${t}<button class="tgdel" onclick="removeType(${i})">×</button></div>`
-  ).join('');
-}
-
-async function addEmp() {
-  const name = document.getElementById('newEmpName').value.trim();
-  const color = document.getElementById('newEmpColor').value;
-  if (!name) return;
-  if (DB.employees.find(e=>e.name===name)) { showToast('이미 있는 직원입니다','er'); return; }
+async function addEmp(){
+  const name=document.getElementById('newEn').value.trim();
+  const color=document.getElementById('newEc').value;
+  if(!name)return;
+  if(DB.employees.find(e=>e.name===name)){toast('이미 있는 직원입니다','er');return}
   DB.employees.push({name,color});
-  document.getElementById('newEmpName').value='';
-  showLoading('저장 중...');
-  await ghWrite(); hideLoading();
-  renderEmpTags(); renderAll(); showToast(`${name} 추가 완료`,'ok');
+  document.getElementById('newEn').value='';
+  showLD('저장 중...');await gasWrite();hideLD();
+  renderEmpTg();renderAll();toast(`${name} 추가 완료`,'ok');
 }
-async function removeEmp(i) {
-  if (!confirm(`${DB.employees[i].name}을(를) 삭제하시겠습니까?`)) return;
+async function rmEmp(i){
+  if(!confirm(`${DB.employees[i].name}을(를) 삭제할까요?`))return;
   DB.employees.splice(i,1);
-  showLoading('저장 중...');
-  await ghWrite(); hideLoading();
-  renderEmpTags(); renderAll(); showToast('삭제되었습니다','ok');
+  showLD('저장 중...');await gasWrite();hideLD();
+  renderEmpTg();renderAll();toast('삭제되었습니다','ok');
 }
-async function addType() {
-  const name = document.getElementById('newTypeName').value.trim();
-  if (!name) return;
-  if (DB.leaveTypes.includes(name)) { showToast('이미 있는 유형입니다','er'); return; }
+async function addType(){
+  const name=document.getElementById('newTn').value.trim();
+  if(!name)return;
+  if(DB.leaveTypes.includes(name)){toast('이미 있는 유형입니다','er');return}
   DB.leaveTypes.push(name);
-  document.getElementById('newTypeName').value='';
-  showLoading('저장 중...');
-  await ghWrite(); hideLoading();
-  renderTypeTags(); showToast(`${name} 추가 완료`,'ok');
+  document.getElementById('newTn').value='';
+  showLD('저장 중...');await gasWrite();hideLD();
+  renderTypeTg();toast(`${name} 추가 완료`,'ok');
 }
-async function removeType(i) {
-  if (DB.leaveTypes.length<=1) { showToast('최소 1개 유형 필요','er'); return; }
+async function rmType(i){
+  if(DB.leaveTypes.length<=1){toast('최소 1개 유형 필요','er');return}
   DB.leaveTypes.splice(i,1);
-  showLoading('저장 중...');
-  await ghWrite(); hideLoading();
-  renderTypeTags(); showToast('삭제되었습니다','ok');
+  showLD('저장 중...');await gasWrite();hideLD();
+  renderTypeTg();toast('삭제되었습니다','ok');
 }
 
-function saveGHConfig() {
-  const owner = document.getElementById('ghOwner').value.trim();
-  const repo  = document.getElementById('ghRepo').value.trim();
-  const token = document.getElementById('ghToken').value.trim();
-  if (!owner||!repo||!token) { showToast('모든 항목을 입력하세요','er'); return; }
-  localStorage.setItem('gh_owner', owner);
-  localStorage.setItem('gh_repo',  repo);
-  localStorage.setItem('gh_token', token);
-  ghFileSha = '';
-  showToast('GitHub 설정 저장 완료 ✓','ok');
-}
-async function testGHConfig() {
-  saveGHConfig();
-  showLoading('연결 테스트 중...');
-  const ok = await ghRead();
-  hideLoading();
-  if (ok) { renderAll(); showToast('연결 성공! 데이터를 불러왔습니다 ✓','ok'); }
-}
-
-/* ════════════════════════════════════
+/* ══════════════════════
    UTILS
-════════════════════════════════════ */
-function showLoading(msg='처리 중...') {
-  document.getElementById('loadingMsg').textContent = msg;
-  document.getElementById('loadingOverlay').style.display = 'flex';
+══════════════════════ */
+function showLD(msg='처리 중...'){document.getElementById('ldmsg').textContent=msg;document.getElementById('ldov').style.display='flex'}
+function hideLD(){document.getElementById('ldov').style.display='none'}
+let _tt;
+function toast(msg,type=''){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.className='toast show '+(type||'');
+  clearTimeout(_tt);_tt=setTimeout(()=>el.className='toast',2800);
 }
-function hideLoading() { document.getElementById('loadingOverlay').style.display = 'none'; }
-
-let toastTimer;
-function showToast(msg, type='') {
-  const el = document.getElementById('toast');
-  el.textContent = msg; el.className = 'toast show ' + type;
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.className='toast', 2800);
-}
-
-document.addEventListener('keydown', e => {
-  if (e.key==='Escape') {
-    document.getElementById('dateModal').style.display='none';
-    document.getElementById('adminModal').style.display='none';
-  }
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){closeDM();closeAdmin()}
 });
 </script>
 </body>
