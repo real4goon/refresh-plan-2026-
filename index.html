@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>연차 · 반차 현황판</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&family=Gmarket+Sans:wght@300;500;700&display=swap" rel="stylesheet">
 <style>
@@ -314,6 +314,153 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 #ldov p{font-size:13px;color:var(--text2)}
 
 @keyframes spin{to{transform:rotate(360deg)}}
+
+/* ══════════════════════════════════════
+   MOBILE STYLES (max-width: 768px)
+══════════════════════════════════════ */
+@media (max-width: 768px) {
+  :root { --hh: 52px; --sw: 0px; --mob-tab-h: 60px; }
+  html,body { overflow: hidden; }
+
+  /* 헤더 모바일 */
+  #hdr {
+    padding: 0 12px !important;
+    height: var(--hh) !important;
+  }
+  .hlogo span { font-size: 13px !important; }
+  .hlogo .ico { width: 24px; height: 24px; font-size: 12px; }
+  .sync { display: none !important; }
+  .hbtn { padding: 5px 9px !important; font-size: 11px !important; }
+  #hSyncBtn { display: none !important; }
+
+  /* 사이드바 숨김 (모바일에선 월 선택을 헤더에) */
+  #sb { display: none !important; }
+
+  /* 앱 레이아웃 */
+  #app {
+    padding-left: 0 !important;
+    padding-top: var(--hh) !important;
+    padding-bottom: var(--mob-tab-h) !important;
+    height: 100vh !important;
+    overflow: hidden !important;
+  }
+  #main {
+    flex-direction: column !important;
+    height: 100% !important;
+    overflow: hidden !important;
+  }
+
+  /* 캘린더 패널 */
+  #calP {
+    width: 100% !important;
+    height: 100% !important;
+    border-right: none !important;
+    display: none;
+  }
+  #calP.mob-active { display: flex !important; }
+
+  /* 테이블 패널 */
+  #tblP {
+    width: 100% !important;
+    height: 100% !important;
+    display: none;
+  }
+  #tblP.mob-active { display: flex !important; }
+
+  /* 캘린더 셀 모바일 */
+  .ccell { min-height: 52px !important; }
+  .cchip { font-size: 7.5px !important; padding: 1px 3px !important; }
+  .dno { font-size: 10px !important; padding: 3px 4px 1px !important; }
+  .cscroll { padding: 8px 10px !important; }
+  .cgrid { gap: 2px !important; }
+
+  /* 캘린더 상단 */
+  .ctop { padding: 12px 14px 10px !important; }
+  .ctop h2 { font-size: 17px !important; }
+  .lgbar { padding: 7px 12px !important; gap: 5px !important; }
+  .lgit { font-size: 10px !important; }
+  .lgdot { width: 7px; height: 7px; }
+
+  /* 테이블 */
+  .ttop { padding: 12px 14px 10px !important; }
+  .ttop h3 { font-size: 15px !important; }
+
+  /* 모달 */
+  .modal { width: 100% !important; max-width: 100% !important; border-radius: 20px 20px 0 0 !important; padding: 22px 20px 32px !important; position: fixed !important; bottom: 0 !important; left: 0 !important; right: 0 !important; top: auto !important; max-height: 90vh !important; }
+  .ov { align-items: flex-end !important; }
+  .mlg { width: 100% !important; }
+
+  /* 하단 탭바 */
+  #mobTab {
+    display: flex !important;
+  }
+
+  /* 월 선택 모바일 (헤더 내 드롭다운 대신 슬라이더) */
+  #mobMonthBar {
+    display: flex !important;
+  }
+}
+
+/* 하단 탭바 (모바일 전용) */
+#mobTab {
+  display: none;
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: 60px;
+  background: var(--header);
+  border-top: 1px solid rgba(255,255,255,.08);
+  z-index: 150;
+  padding: 0 8px;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.mob-tab-btn {
+  flex: 1;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 3px;
+  background: none; border: none;
+  cursor: pointer; font-family: inherit;
+  color: rgba(255,255,255,.4);
+  transition: color .15s;
+  padding: 8px 0;
+  border-radius: 10px;
+  margin: 4px 2px;
+}
+.mob-tab-btn.on { color: #93b4ff; background: rgba(37,99,235,.15); }
+.mob-tab-btn .mti { font-size: 20px; line-height: 1; }
+.mob-tab-btn .mtl { font-size: 10px; font-weight: 700; letter-spacing: .3px; }
+
+/* 월 선택 가로 스크롤바 (모바일) */
+#mobMonthBar {
+  display: none;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 12px 10px;
+  gap: 6px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  flex-shrink: 0;
+  scrollbar-width: none;
+}
+#mobMonthBar::-webkit-scrollbar { display: none; }
+.mob-month-btn {
+  flex-shrink: 0;
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1.5px solid var(--border2);
+  background: var(--surface2);
+  font-size: 12px; font-weight: 700;
+  cursor: pointer; font-family: inherit;
+  color: var(--text2);
+  white-space: nowrap;
+  transition: all .15s;
+}
+.mob-month-btn.on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
 @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-10px)}40%{transform:translateX(10px)}60%{transform:translateX(-6px)}80%{transform:translateX(6px)}}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 </style>
@@ -336,7 +483,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
   <div class="hlogo"><div class="ico">📋</div><span>연차 · 반차 현황판</span></div>
   <div class="hright">
     <div class="sync"><div class="sdot" id="sdot"></div><span id="stxt">-</span></div>
-    <button class="hbtn acc" onclick="syncNow()">🔄 동기화</button>
+    <button class="hbtn acc" id="hSyncBtn" onclick="syncNow()">🔄 동기화</button>
     <button class="hbtn" onclick="openAdmin()">⚙️ 관리</button>
     <button class="hbtn" onclick="reLock()">🔒 잠금</button>
   </div>
@@ -350,6 +497,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
   <div id="main">
     <div id="calP">
       <div class="ctop"><h2 id="ctitle"></h2><div class="sub" id="csub"></div></div>
+      <div id="mobMonthBar"></div>
       <div class="lgbar" id="lgbar"></div>
       <div class="cscroll">
         <div class="cdow" id="cdow"></div>
@@ -451,6 +599,23 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
       </div>
     </div>
   </div>
+</div>
+
+
+<!-- 모바일 하단 탭바 -->
+<div id="mobTab">
+  <button class="mob-tab-btn on" id="mtb0" onclick="mobTabSwitch(0)">
+    <span class="mti">📅</span><span class="mtl">캘린더</span>
+  </button>
+  <button class="mob-tab-btn" id="mtb1" onclick="mobTabSwitch(1)">
+    <span class="mti">📊</span><span class="mtl">현황표</span>
+  </button>
+  <button class="mob-tab-btn" id="mtb2" onclick="syncNow()">
+    <span class="mti">🔄</span><span class="mtl">동기화</span>
+  </button>
+  <button class="mob-tab-btn" id="mtb3" onclick="openAdmin()">
+    <span class="mti">⚙️</span><span class="mtl">관리</span>
+  </button>
 </div>
 
 <!-- LOADING -->
@@ -620,6 +785,7 @@ async function init(){
   await gasRead();
   hideLD();
   renderAll();
+  applyMobileLayout();
 }
 
 /* ══════════════════════
@@ -640,7 +806,7 @@ function renderSB(){
 /* ══════════════════════
    RENDER ALL
 ══════════════════════ */
-function renderAll(){renderLg();renderCal();renderTbl()}
+function renderAll(){renderLg();renderCal();renderTbl();if(isMobile())renderMobMonthBar();}
 
 /* ══════════════════════
    LEGEND
@@ -984,6 +1150,53 @@ function toast(msg,type=''){
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){closeDM();closeAdmin()}
 });
+
+/* ══════════════════════
+   MOBILE
+══════════════════════ */
+let mobTabIdx = 0;
+function isMobile(){ return window.innerWidth <= 768; }
+
+function mobTabSwitch(i){
+  mobTabIdx = i;
+  [0,1,2,3].forEach(j=>{
+    const b=document.getElementById('mtb'+j);
+    if(b) b.classList.toggle('on', j===i);
+  });
+  document.getElementById('calP').classList.toggle('mob-active', i===0);
+  document.getElementById('tblP').classList.toggle('mob-active', i===1);
+}
+
+function renderMobMonthBar(){
+  const bar = document.getElementById('mobMonthBar');
+  if(!bar) return;
+  bar.innerHTML = '';
+  MONTHS.forEach(m=>{
+    const btn = document.createElement('button');
+    btn.className = 'mob-month-btn' + (m===curM?' on':'');
+    btn.textContent = m+'월';
+    btn.onclick = ()=>{ curM=m; renderMobMonthBar(); renderAll(); };
+    bar.appendChild(btn);
+  });
+  // 현재 월로 스크롤
+  setTimeout(()=>{
+    const active = bar.querySelector('.on');
+    if(active) active.scrollIntoView({inline:'center',behavior:'smooth'});
+  }, 50);
+}
+
+function applyMobileLayout(){
+  if(isMobile()){
+    // 초기 탭 설정
+    document.getElementById('calP').classList.add('mob-active');
+    renderMobMonthBar();
+  }
+}
+
+window.addEventListener('resize', ()=>{
+  if(isMobile()){ renderMobMonthBar(); }
+});
+
 // 잠금화면 자동 포커스
 window.addEventListener('load',()=>{ document.getElementById('lpw').focus(); });
 </script>
