@@ -426,7 +426,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 /* ══════════════════════
    CONFIG
 ══════════════════════ */
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbzXMH59oDc3ChsVhdmf_dHoMyNM1C0e2A44xZf_OWsTX18NYXYlSruXGNfnAJK03Xxqng/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxyimPsM-AlL_k1bOfQQ7K2sptoph3JzIneVE0onNyPOfDcGRpiatNFI1oRSOE8Bog5cA/exec';
 const PW      = '4114';
 const YEAR    = 2026;
 const MONTHS  = [4,5,6,7,8,9,10,11,12];
@@ -454,46 +454,81 @@ let selTyp = '';
 let selDt  = '';
 
 /* ══════════════════════
-   GAS API
+   GAS API (JSONP - CORS 우회)
 ══════════════════════ */
+function jsonp(url) {
+  return new Promise((resolve, reject) => {
+    const cb = 'cb_' + Date.now();
+    const script = document.createElement('script');
+    const timer = setTimeout(() => {
+      delete window[cb];
+      if(document.body.contains(script)) document.body.removeChild(script);
+      reject(new Error('timeout'));
+    }, 10000);
+    window[cb] = (data) => {
+      clearTimeout(timer);
+      delete window[cb];
+      if(document.body.contains(script)) document.body.removeChild(script);
+      resolve(data);
+    };
+    script.src = url + '&callback=' + cb;
+    script.onerror = () => { clearTimeout(timer); reject(new Error('script error')); };
+    document.body.appendChild(script);
+  });
+}
+
 async function gasRead() {
   setSS('ld','불러오는 중...');
   try {
-    const res = await fetch(GAS_URL + '?t=' + Date.now());
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const json = await res.json();
-    if (json && json.employees) DB = json;
-    else if (Object.keys(json).length === 0) {
-      // 빈 시트 → 기본값 저장
+    const data = await jsonp(GAS_URL + '?t=' + Date.now());
+    if (data && data.employees) DB = data;
+    else if (!data || Object.keys(data).length === 0) {
       await gasWrite();
     }
     setSS('ok','동기화 완료 · ' + nowTime());
     return true;
   } catch(e) {
     setSS('er','읽기 실패');
-    toast('데이터 불러오기 실패: ' + e.message,'er');
+    toast('데이터 불러오기 실패: ' + e.message, 'er');
     return false;
   }
 }
 
 async function gasWrite() {
   setSS('ld','저장 중...');
-  try {
-    const res = await fetch(GAS_URL, {
-      method:'POST',
-      headers:{'Content-Type':'text/plain'},
-      body: JSON.stringify({pw: PW, data: DB})
-    });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const json = await res.json();
-    if (!json.ok) throw new Error(json.msg || '저장 실패');
-    setSS('ok','저장 완료 · ' + nowTime());
-    return true;
-  } catch(e) {
-    setSS('er','저장 실패');
-    toast('저장 실패: ' + e.message,'er');
-    return false;
-  }
+  return new Promise((resolve) => {
+    const cb = 'cbw_' + Date.now();
+    const script = document.createElement('script');
+    const payload = encodeURIComponent(JSON.stringify({pw: PW, data: DB}));
+    const timer = setTimeout(() => {
+      delete window[cb];
+      if(document.body.contains(script)) document.body.removeChild(script);
+      setSS('er','저장 실패');
+      toast('저장 시간 초과', 'er');
+      resolve(false);
+    }, 12000);
+    window[cb] = (res) => {
+      clearTimeout(timer);
+      delete window[cb];
+      if(document.body.contains(script)) document.body.removeChild(script);
+      if (res && res.ok) {
+        setSS('ok','저장 완료 · ' + nowTime());
+        resolve(true);
+      } else {
+        setSS('er','저장 실패');
+        toast('저장 실패: ' + (res&&res.msg ? res.msg : '알 수 없는 오류'), 'er');
+        resolve(false);
+      }
+    };
+    script.src = GAS_URL + '?action=write&payload=' + payload + '&callback=' + cb;
+    script.onerror = () => {
+      clearTimeout(timer);
+      setSS('er','저장 실패');
+      toast('저장 실패: 네트워크 오류', 'er');
+      resolve(false);
+    };
+    document.body.appendChild(script);
+  });
 }
 
 async function syncNow() {
