@@ -124,8 +124,8 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--tx);
 .tchip{padding:6px 12px;border:1.5px solid var(--bd2);border-radius:8px;background:var(--sur2);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;color:var(--tx2);transition:all .12s}
 .tchip:hover{border-color:var(--ac);color:var(--ac)}
 .tchip.sel{color:#fff!important;border-color:transparent!important}
-.elist{display:flex;flex-direction:column;gap:5px;margin-bottom:12px;max-height:160px;overflow-y:auto}
-.eit{display:flex;align-items:center;justify-content:space-between;padding:8px 11px;background:var(--sur2);border:1px solid var(--bd);border-radius:8px}
+.elist{display:flex;flex-direction:column;gap:4px;margin-bottom:12px;max-height:240px;overflow-y:auto}
+.eit{display:flex;align-items:center;justify-content:space-between;padding:8px 11px;background:var(--sur2);border:1px solid var(--bd);border-radius:8px;overflow:hidden}
 .eit .ei{display:flex;flex-direction:column}
 .eit .en{font-weight:700;font-size:12px}
 .eit .et{font-size:11px;color:var(--tx3)}
@@ -376,13 +376,9 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--tx);
         <div class="tchips" id="cusChips"></div>
       </div>
       <div class="fg">
-        <div class="flbl">대상</div>
-        <div style="display:flex;gap:6px;margin-bottom:8px">
-          <button class="tchip" id="ctAll" onclick="setCusTarget('all')">전체</button>
-          <button class="tchip" id="ctEmp" onclick="setCusTarget('emp')">직원 지정</button>
-        </div>
-        <div id="cusEmpRow" style="display:none;margin-bottom:8px">
-          <input list="empDL2" class="fi" id="cusEmpIn" placeholder="직원 이름">
+        <div class="flbl">대상 직원</div>
+        <div style="margin-bottom:8px">
+          <input list="empDL2" class="fi" id="cusEmpIn" placeholder="이름 입력 또는 (전체) 선택">
           <datalist id="empDL2"></datalist>
         </div>
         <div style="display:flex;gap:6px">
@@ -427,7 +423,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--tx);
 
 <script>
 const GAS='https://script.google.com/macros/s/AKfycbxyimPsM-AlL_k1bOfQQ7K2sptoph3JzIneVE0onNyPOfDcGRpiatNFI1oRSOE8Bog5cA/exec';
-const PW='4114', YEAR=2026, MONTHS=[4,5,6,7,8,9,10,11,12];
+const PW='4114', ADMIN_PW='4041', YEAR=2026, MONTHS=[4,5,6,7,8,9,10,11,12];
 
 const DEF={
   employees:[
@@ -666,9 +662,21 @@ function renderTbl(){
     tbody.appendChild(tr);
   });
   const sr=document.createElement('tr');sr.className='sumr';
-  const sn=document.createElement('td');sn.className='fc';sn.textContent='합계';sr.appendChild(sn);
+  const sn=document.createElement('td');sn.className='fc';sn.textContent='합계(인원)';sr.appendChild(sn);
   let gt=0;
-  for(let d=0;d<lastDay;d++){const td=document.createElement('td');td.textContent=colT[d]>0?fDay(colT[d]):'';sr.appendChild(td);gt+=colT[d];}
+  for(let d=0;d<lastDay;d++){
+    // 인원 카운트 (날짜별 고유 직원 수, 커스텀 포함)
+    const key2=dk(YEAR,m,d+1);
+    const dayEnts=DB.entries[key2]||[];
+    const uniqNames=new Set(dayEnts.map(e=>e.name));
+    const cnt=uniqNames.size;
+    const td=document.createElement('td');
+    if(cnt>0){
+      td.textContent=cnt+'명';
+      if(cnt>=4){td.style.fontWeight='900';td.style.color='#dc2626';td.style.background='#fff5f5';}
+    }
+    sr.appendChild(td);gt+=colT[d];
+  }
   const gtd=document.createElement('td');gtd.className='sc';gtd.textContent=fDay(gt);sr.appendChild(gtd);
   const gtd2=document.createElement('td');gtd2.className='sc2';gtd2.textContent='';sr.appendChild(gtd2);
   tbody.appendChild(sr);
@@ -683,11 +691,10 @@ function openDM(key,d,m){
   document.getElementById('dmSub').textContent='휴가 또는 일정을 등록하세요';
   renderEList(key);
   document.getElementById('empDL').innerHTML=DB.employees.map(e=>`<option value="${e.name}">`).join('');
-  document.getElementById('empDL2').innerHTML=DB.employees.map(e=>`<option value="${e.name}">`).join('');
+  document.getElementById('empDL2').innerHTML='<option value="(전체)">' + DB.employees.map(e=>`<option value="${e.name}">`).join('');
   document.getElementById('empIn').value='';
   document.getElementById('cusEmpIn').value='';
   document.getElementById('cusLabel').value='';
-  setCusTarget('all');
   renderTChips();renderCusChips();
   document.getElementById('dModal').style.display='flex';
   setTimeout(()=>document.getElementById('empIn').focus(),80);
@@ -700,12 +707,36 @@ function renderEList(key){
   const el=document.getElementById('eList');
   if(!ents.length){g.style.display='none';return}
   g.style.display='';el.innerHTML='';
-  ents.forEach((e,i)=>{
-    const emp=DB.employees.find(x=>x.name===e.name);
-    const color=isCus(e.type)?'#64748b':(emp?emp.color:'#aaa');
-    const item=document.createElement('div');item.className='eit';
-    item.innerHTML=`<div class="ei"><span class="en" style="color:${color}">${e.name}</span><span class="et">${e.type}${isCus(e.type)?' (미카운트)':''}</span></div><button class="edel" onclick="delEntry('${key}',${i})">×</button>`;
-    el.appendChild(item);
+  // 유형별 그룹핑해서 표시
+  const leaveEnts=ents.filter(e=>!isCus(e.type));
+  const cusEnts=ents.filter(e=>isCus(e.type));
+  const allGroups=[
+    {label:'휴가',items:leaveEnts},
+    {label:'커스텀 일정',items:cusEnts}
+  ];
+  allGroups.forEach(grp=>{
+    if(!grp.items.length)return;
+    const header=document.createElement('div');
+    header.style.cssText='font-size:10px;font-weight:800;color:var(--tx3);text-transform:uppercase;letter-spacing:.8px;margin:6px 0 4px;';
+    header.textContent=grp.label+' ('+grp.items.length+'건)';
+    el.appendChild(header);
+    grp.items.forEach((e)=>{
+      const i=ents.indexOf(e);
+      const emp=DB.employees.find(x=>x.name===e.name);
+      const color=isCus(e.type)?'#64748b':(emp?emp.color:'#aaa');
+      const item=document.createElement('div');item.className='eit';
+      item.style.borderLeft=`3px solid ${color}`;
+      item.innerHTML=`
+        <div class="ei" style="flex-direction:row;align-items:center;gap:8px">
+          <div style="width:28px;height:28px;border-radius:50%;background:${color};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;flex-shrink:0">${nShort(e.name).slice(0,1)}</div>
+          <div>
+            <span class="en" style="color:${color};display:block">${e.name}</span>
+            <span class="et">${e.type}${isCus(e.type)?'  <span style="color:#94a3b8;font-size:10px">미카운트</span>':''}</span>
+          </div>
+        </div>
+        <button class="edel" onclick="delEntry('${key}',${i})">×</button>`;
+      el.appendChild(item);
+    });
   });
 }
 
@@ -733,14 +764,7 @@ function renderCusChips(){
   });
 }
 
-function setCusTarget(t){
-  cusTarget=t;
-  document.getElementById('ctAll').classList.toggle('sel',t==='all');
-  document.getElementById('ctAll').style.background=t==='all'?'#64748b':'';
-  document.getElementById('ctEmp').classList.toggle('sel',t==='emp');
-  document.getElementById('ctEmp').style.background=t==='emp'?'#64748b':'';
-  document.getElementById('cusEmpRow').style.display=t==='emp'?'block':'none';
-}
+// setCusTarget 제거됨 (직원지정에 (전체) 통합)
 
 async function saveEntry(){
   const name=document.getElementById('empIn').value.trim();
@@ -755,23 +779,27 @@ async function saveEntry(){
 
 async function saveCusEntry(){
   const label=document.getElementById('cusLabel').value.trim();
+  const nameInput=document.getElementById('cusEmpIn').value.trim();
   if(!label){toast('일정 내용을 입력하세요','er');return}
+  if(!nameInput){toast('대상 직원을 입력하세요 (전체는 "(전체)" 선택)','er');return}
   if(!DB.customTypes)DB.customTypes=[];
   if(!DB.customTypes.includes(label))DB.customTypes.push(label);
   if(!DB.entries[selDt])DB.entries[selDt]=[];
-  if(cusTarget==='all'){
+  if(nameInput==='(전체)'){
+    // 전체 직원 등록
+    let added=0;
     DB.employees.forEach(emp=>{
-      if(!DB.entries[selDt].find(e=>e.name===emp.name&&e.type===label))
-        DB.entries[selDt].push({name:emp.name,type:label});
+      if(!DB.entries[selDt].find(e=>e.name===emp.name&&e.type===label)){
+        DB.entries[selDt].push({name:emp.name,type:label});added++;
+      }
     });
+    if(added===0){toast('이미 전체 등록되어 있습니다','er');return}
   }else{
-    const name=document.getElementById('cusEmpIn').value.trim();
-    if(!name){toast('직원 이름을 입력하세요','er');return}
-    if(DB.entries[selDt].find(e=>e.name===name&&e.type===label)){toast('이미 등록된 항목입니다','er');return}
-    DB.entries[selDt].push({name,type:label});
+    if(DB.entries[selDt].find(e=>e.name===nameInput&&e.type===label)){toast('이미 등록된 항목입니다','er');return}
+    DB.entries[selDt].push({name:nameInput,type:label});
   }
   showLD('저장 중...');const ok=await gasWrite();hideLD();
-  if(ok){renderEList(selDt);renderAll();document.getElementById('cusLabel').value='';toast('커스텀 일정 등록 완료 ✓','ok')}
+  if(ok){renderEList(selDt);renderAll();document.getElementById('cusLabel').value='';document.getElementById('cusEmpIn').value='';toast('커스텀 일정 등록 완료 ✓','ok')}
 }
 
 async function delEntry(key,idx){
@@ -783,7 +811,13 @@ async function delEntry(key,idx){
 }
 
 /* ── ADMIN ── */
-function openAdmin(){aTab(0);document.getElementById('aModal').style.display='flex'}
+function openAdmin(){
+  // 관리자 비번 확인
+  const pw = prompt('관리자 비밀번호를 입력하세요');
+  if(pw === null) return; // 취소
+  if(pw !== ADMIN_PW){ toast('관리자 비밀번호가 올바르지 않습니다','er'); return; }
+  aTab(0);document.getElementById('aModal').style.display='flex';
+}
 function closeAdmin(){document.getElementById('aModal').style.display='none'}
 function aTab(i){
   document.querySelectorAll('.atab').forEach((b,j)=>b.classList.toggle('on',j===i));
