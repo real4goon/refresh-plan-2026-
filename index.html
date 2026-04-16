@@ -167,7 +167,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 .ccell{
   border-radius:var(--r2);border:1.5px solid transparent;
   cursor:pointer;background:var(--surface2);
-  min-height:62px;display:flex;flex-direction:column;
+  min-height:78px;display:flex;flex-direction:column;
   transition:all .12s;overflow:hidden;
 }
 .ccell:hover{border-color:var(--border2);box-shadow:var(--sh);transform:translateY(-1px)}
@@ -178,12 +178,13 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 .ccell.sun .dno{color:#ef4444}
 .ccell.sat .dno{color:var(--accent)}
 .dno{font-size:11px;font-weight:700;padding:5px 6px 2px;color:var(--text);line-height:1}
-.cchips{padding:0 3px 3px;display:flex;flex-direction:column;gap:2px;overflow:hidden}
+.cchips{padding:0 3px 3px;display:flex;flex-direction:row;flex-wrap:wrap;gap:2px;overflow:hidden;align-content:flex-start}
 .cchip{
-  font-size:9.5px;font-weight:700;
-  padding:2px 5px;border-radius:4px;
+  font-size:8.5px;font-weight:700;
+  padding:1px 4px;border-radius:3px;
   color:#fff;white-space:nowrap;
-  overflow:hidden;text-overflow:ellipsis;line-height:1.45;
+  overflow:hidden;text-overflow:ellipsis;line-height:1.5;
+  max-width:100%;
 }
 .cmore{font-size:9px;color:var(--text3);padding:0 4px}
 
@@ -324,7 +325,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
   <div class="lcard">
     <div class="llogo"><div class="ico">📋</div><span>연차 · 반차 현황판</span></div>
     <p>비밀번호를 입력하세요</p>
-    <input class="linput" type="password" id="lpw" maxlength="8" placeholder="••••" autocomplete="off">
+    <input class="linput" type="password" id="lpw" maxlength="8" placeholder="••••" autocomplete="off" autofocus>
     <button class="lbtn" onclick="tryUnlock()">로그인</button>
     <div class="lerr" id="lerr"></div>
   </div>
@@ -381,6 +382,30 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
       <div class="flbl">휴가 유형</div>
       <div class="tchips" id="tChips"></div>
     </div>
+    <!-- 커스텀 일정 구분선 -->
+    <div id="cusSection">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <div style="flex:1;height:1px;background:var(--border)"></div>
+        <span style="font-size:10px;color:var(--text3);white-space:nowrap">커스텀 일정 (연차 미카운트)</span>
+        <div style="flex:1;height:1px;background:var(--border)"></div>
+      </div>
+      <div class="tchips" id="cusChips"></div>
+      <div style="margin-top:8px">
+        <div class="flbl">대상</div>
+        <div style="display:flex;gap:6px;margin-bottom:8px">
+          <button class="tchip" id="cusTargetAll" onclick="setCusTarget('all')" style="font-size:11px;padding:5px 10px">전체</button>
+          <button class="tchip" id="cusTargetEmp" onclick="setCusTarget('emp')" style="font-size:11px;padding:5px 10px">직원 지정</button>
+        </div>
+        <div id="cusEmpRow" style="display:none">
+          <input list="empDL2" class="fi" id="cusEmpIn" placeholder="직원 이름 선택 또는 입력" style="margin-bottom:6px">
+          <datalist id="empDL2"></datalist>
+        </div>
+        <div style="display:flex;gap:6px">
+          <input class="fi" id="cusLabel" placeholder="일정 내용 (예: 교육, 회식)" style="flex:1">
+          <button class="btn bpri" style="flex:0 0 auto;width:64px;padding:10px 0" onclick="saveCusEntry()">추가</button>
+        </div>
+      </div>
+    </div>
     <div class="mft">
       <button class="btn bgho" onclick="closeDM()">닫기</button>
       <button class="btn bpri" onclick="saveEntry()">저장</button>
@@ -397,6 +422,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
     <div class="atabs">
       <button class="atab on" onclick="aTab(0)">👤 직원 관리</button>
       <button class="atab" onclick="aTab(1)">📋 휴가 유형</button>
+      <button class="atab" onclick="aTab(2)">🗓 커스텀 유형</button>
     </div>
     <div id="aEmp">
       <div class="tglist" id="empTg"></div>
@@ -411,6 +437,17 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
       <div class="arow">
         <input type="text" id="newTn" placeholder="유형 이름 (예: 특별휴가)">
         <button onclick="addType()">추가</button>
+      </div>
+    </div>
+    <div id="aCus" style="display:none">
+      <div style="font-size:11px;color:var(--text3);margin-bottom:10px;line-height:1.7">
+        커스텀 일정 유형은 <b>연차 카운트에 포함되지 않습니다.</b><br>
+        예: 교육, 회식, 출장, 행사 등
+      </div>
+      <div class="tglist" id="cusTg"></div>
+      <div class="arow">
+        <input type="text" id="newCn" placeholder="커스텀 유형 이름 (예: 교육)">
+        <button onclick="addCusType()">추가</button>
       </div>
     </div>
   </div>
@@ -445,6 +482,7 @@ const DEFAULT_DB = {
     {name:'장명희',color:'#db2777'},
   ],
   leaveTypes:['연차','오전반휴','오후반휴'],
+  customTypes:[],
   entries:{}
 };
 
@@ -452,6 +490,7 @@ let DB = JSON.parse(JSON.stringify(DEFAULT_DB));
 let curM   = 4;
 let selTyp = '';
 let selDt  = '';
+let selIsCustom = false; // 커스텀 일정 여부
 
 /* ══════════════════════
    GAS API (JSONP - CORS 우회)
@@ -646,16 +685,19 @@ function renderCal(){
     const dno=document.createElement('div');dno.className='dno';dno.textContent=d;
     cell.appendChild(dno);
     const chips=document.createElement('div');chips.className='cchips';
-    ents.slice(0,3).forEach(e=>{
+    const SHOW_MAX=6;
+    ents.slice(0,SHOW_MAX).forEach(e=>{
       const emp=DB.employees.find(x=>x.name===e.name);
-      const c=emp?emp.color:'#999';
+      const isCus=isCustomType(e.type);
+      const c=isCus?'#64748b':(emp?emp.color:'#999');
       const ch=document.createElement('div');
       ch.className='cchip';ch.style.background=c;
+      if(isCus) ch.style.opacity='0.85';
       ch.title=`${e.name} - ${e.type}`;
-      ch.textContent=e.name.slice(0,1)+' '+tShort(e.type);
+      ch.textContent=nShort(e.name)+' '+tShort(e.type);
       chips.appendChild(ch);
     });
-    if(ents.length>3){const more=document.createElement('div');more.className='cmore';more.textContent=`+${ents.length-3}`;chips.appendChild(more)}
+    if(ents.length>SHOW_MAX){const more=document.createElement('div');more.className='cmore';more.textContent=`+${ents.length-SHOW_MAX}`;chips.appendChild(more)}
     cell.appendChild(chips);
     cell.onclick=()=>openDM(key,d,m);
     grid.appendChild(cell);
@@ -663,7 +705,15 @@ function renderCal(){
 }
 
 function tShort(t){return t==='연차'?'연':t==='오전반휴'?'오전':t==='오후반휴'?'오후':t.slice(0,2)}
-function tVal(t){return t==='연차'?1:(t==='오전반휴'||t==='오후반휴')?.5:.5}
+function nShort(name){ return name.length>=3 ? name.slice(1) : name; }
+function tVal(t){
+  if(t==='연차') return 1;
+  if(t==='오전반휴'||t==='오후반휴') return 0.5;
+  // 커스텀 유형은 연차 카운트 없음
+  if(DB.customTypes && DB.customTypes.includes(t)) return 0;
+  return 0.5;
+}
+function isCustomType(t){ return DB.customTypes && DB.customTypes.includes(t); }
 function fDay(v){return v===0?'-':v%1===0?v+'일':v+'일'}
 
 /* ══════════════════════
@@ -698,7 +748,10 @@ function renderTbl(){
       const td=document.createElement('td');td.style.padding='4px 3px';
       ee.forEach(e=>{
         const b=document.createElement('span');b.className='tbdg';
-        b.style.background=emp.color;b.textContent=tShort(e.type);b.title=e.type;
+        const isCus=isCustomType(e.type);
+        b.style.background=isCus?'#94a3b8':emp.color;
+        b.style.opacity=isCus?'0.8':'1';
+        b.textContent=tShort(e.type);b.title=e.type+(isCus?' (미카운트)':'');
         td.appendChild(b);
         const v=tVal(e.type);mSum+=v;colT[d-1]+=v;
       });
@@ -739,8 +792,13 @@ function openDM(key,d,m){
   document.getElementById('dmSub').textContent='직원과 휴가 유형을 선택 후 저장하세요';
   renderEList(key);
   document.getElementById('empDL').innerHTML=DB.employees.map(e=>`<option value="${e.name}">`).join('');
+  document.getElementById('empDL2').innerHTML=DB.employees.map(e=>`<option value="${e.name}">`).join('');
   document.getElementById('empIn').value='';
+  document.getElementById('cusEmpIn').value='';
+  document.getElementById('cusLabel').value='';
+  setCusTarget('all');
   renderTChips();
+  renderCusChips();
   document.getElementById('dModal').style.display='flex';
   setTimeout(()=>document.getElementById('empIn').focus(),80);
 }
@@ -767,11 +825,58 @@ function renderTChips(){
   const cmap={'연차':'#2563eb','오전반휴':'#d97706','오후반휴':'#16a34a'};
   DB.leaveTypes.forEach(t=>{
     const btn=document.createElement('button');
-    btn.className='tchip'+(t===selTyp?' sel':'');btn.textContent=t;
-    if(t===selTyp)btn.style.background=cmap[t]||'#555';
-    btn.onclick=()=>{selTyp=t;renderTChips()};
+    btn.className='tchip'+(!selIsCustom&&t===selTyp?' sel':'');btn.textContent=t;
+    if(!selIsCustom&&t===selTyp)btn.style.background=cmap[t]||'#2563eb';
+    btn.onclick=()=>{selTyp=t;selIsCustom=false;renderTChips();renderCusChips()};
     el.appendChild(btn);
   });
+}
+
+let cusTarget='all';
+function setCusTarget(t){
+  cusTarget=t;
+  document.getElementById('cusTargetAll').classList.toggle('sel',t==='all');
+  document.getElementById('cusTargetAll').style.background=t==='all'?'#64748b':'';
+  document.getElementById('cusTargetEmp').classList.toggle('sel',t==='emp');
+  document.getElementById('cusTargetEmp').style.background=t==='emp'?'#64748b':'';
+  document.getElementById('cusEmpRow').style.display=t==='emp'?'':'none';
+}
+
+function renderCusChips(){
+  const el=document.getElementById('cusChips');
+  if(!el)return;
+  el.innerHTML='';
+  (DB.customTypes||[]).forEach(t=>{
+    const btn=document.createElement('button');
+    btn.className='tchip'+(selIsCustom&&t===selTyp?' sel':'');
+    btn.textContent=t;btn.style.fontSize='11px';btn.style.padding='5px 10px';
+    if(selIsCustom&&t===selTyp)btn.style.background='#64748b';
+    btn.onclick=()=>{selTyp=t;selIsCustom=true;renderTChips();renderCusChips()};
+    el.appendChild(btn);
+  });
+}
+
+async function saveCusEntry(){
+  const label=document.getElementById('cusLabel').value.trim();
+  if(!label){toast('일정 내용을 입력하세요','er');return}
+  // 커스텀 타입으로 등록 (없으면 자동 추가)
+  if(!DB.customTypes)DB.customTypes=[];
+  if(!DB.customTypes.includes(label))DB.customTypes.push(label);
+  if(!DB.entries[selDt])DB.entries[selDt]=[];
+  if(cusTarget==='all'){
+    // 전체 직원 등록
+    DB.employees.forEach(emp=>{
+      if(!DB.entries[selDt].find(e=>e.name===emp.name&&e.type===label))
+        DB.entries[selDt].push({name:emp.name,type:label});
+    });
+  } else {
+    const name=document.getElementById('cusEmpIn').value.trim();
+    if(!name){toast('직원 이름을 입력하세요','er');return}
+    if(DB.entries[selDt].find(e=>e.name===name&&e.type===label)){toast('이미 등록된 항목입니다','er');return}
+    DB.entries[selDt].push({name,type:label});
+  }
+  showLD('저장 중...');const ok=await gasWrite();hideLD();
+  if(ok){renderEList(selDt);renderAll();document.getElementById('cusLabel').value='';toast('커스텀 일정 등록 완료 ✓','ok')}
 }
 
 async function saveEntry(){
@@ -803,7 +908,8 @@ function aTab(i){
   document.querySelectorAll('.atab').forEach((b,j)=>b.classList.toggle('on',j===i));
   document.getElementById('aEmp').style.display=i===0?'':'none';
   document.getElementById('aType').style.display=i===1?'':'none';
-  if(i===0)renderEmpTg();if(i===1)renderTypeTg();
+  document.getElementById('aCus').style.display=i===2?'':'none';
+  if(i===0)renderEmpTg();if(i===1)renderTypeTg();if(i===2)renderCusTg();
 }
 function renderEmpTg(){
   document.getElementById('empTg').innerHTML=
@@ -844,6 +950,25 @@ async function rmType(i){
   showLD('저장 중...');await gasWrite();hideLD();
   renderTypeTg();toast('삭제되었습니다','ok');
 }
+function renderCusTg(){
+  document.getElementById('cusTg').innerHTML=
+    (DB.customTypes||[]).map((t,i)=>`<div class="tg" style="background:#f1f5fb">${t}<button class="tgdel" onclick="rmCusType(${i})">×</button></div>`).join('');
+}
+async function addCusType(){
+  const name=document.getElementById('newCn').value.trim();
+  if(!name)return;
+  if(!DB.customTypes)DB.customTypes=[];
+  if(DB.customTypes.includes(name)){toast('이미 있는 유형입니다','er');return}
+  DB.customTypes.push(name);
+  document.getElementById('newCn').value='';
+  showLD('저장 중...');await gasWrite();hideLD();
+  renderCusTg();toast(`${name} 추가 완료`,'ok');
+}
+async function rmCusType(i){
+  DB.customTypes.splice(i,1);
+  showLD('저장 중...');await gasWrite();hideLD();
+  renderCusTg();toast('삭제되었습니다','ok');
+}
 
 /* ══════════════════════
    UTILS
@@ -859,6 +984,8 @@ function toast(msg,type=''){
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){closeDM();closeAdmin()}
 });
+// 잠금화면 자동 포커스
+window.addEventListener('load',()=>{ document.getElementById('lpw').focus(); });
 </script>
 </body>
 </html>
