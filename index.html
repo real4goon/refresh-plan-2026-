@@ -441,7 +441,9 @@ const DEF={
 };
 
 let DB=JSON.parse(JSON.stringify(DEF));
-let curM=4, selTyp='', selDt='', selIsCustom=false, cusTarget='all';
+const _now=new Date(), _cm=_now.getMonth()+1;
+let curM=(MONTHS.includes(_cm)?_cm:MONTHS[0]);
+let selTyp='', selDt='', selIsCustom=false, cusTarget='all';
 let mobTabIdx=0;
 
 /* ── GAS JSONP ── */
@@ -464,7 +466,7 @@ async function gasRead(){
     else if(!d||!Object.keys(d).length)await gasWrite();
     if(!DB.customTypes)DB.customTypes=[];
     setSS('ok','동기화 완료 · '+nowT());return true;
-  }catch(e){setSS('er','읽기 실패');toast('불러오기 실패: '+e.message,'er');return false;}
+  }catch(e){setSS('er','연결 불안정');toast('연결 불안정 — 🔄 동기화 버튼으로 재시도하세요','er');return false;}
 }
 async function gasWrite(){
   setSS('ld','저장 중...');
@@ -472,14 +474,22 @@ async function gasWrite(){
     const cb='cbw_'+Date.now();
     const s=document.createElement('script');
     const payload=encodeURIComponent(JSON.stringify({pw:PW,data:DB}));
-    const t=setTimeout(()=>{delete window[cb];s.remove();setSS('er','저장 실패');toast('시간 초과','er');res(false)},12000);
+    let done=false;
+    const finish=(ok,msg)=>{
+      if(done)return; done=true;
+      clearTimeout(t);
+      delete window[cb];
+      if(document.body.contains(s))s.remove();
+      if(ok){setSS('ok','저장 완료 · '+nowT());res(true);}
+      else{setSS('er','저장 실패');toast(msg||'저장 실패','er');res(false);}
+    };
+    const t=setTimeout(()=>finish(false,'저장 시간 초과 - 새로고침 후 확인하세요'),12000);
     window[cb]=(r)=>{
-      clearTimeout(t);delete window[cb];s.remove();
-      if(r&&r.ok){setSS('ok','저장 완료 · '+nowT());res(true);}
-      else{setSS('er','저장 실패');toast('저장 실패: '+(r&&r.msg||'오류'),'er');res(false);}
+      if(r&&r.ok) finish(true);
+      else finish(false,'저장 실패: '+(r&&r.msg||'오류'));
     };
     s.src=GAS+'?action=write&payload='+payload+'&callback='+cb;
-    s.onerror=()=>{clearTimeout(t);setSS('er','저장 실패');toast('네트워크 오류','er');res(false)};
+    s.onerror=()=>{ if(!done){ done=true; clearTimeout(t); delete window[cb]; setSS('ld','재시도 중...'); setTimeout(()=>gasWrite().then(res), 2000); } };
     document.body.appendChild(s);
   });
 }
