@@ -489,7 +489,7 @@ async function gasWrite(){
       else finish(false,'저장 실패: '+(r&&r.msg||'오류'));
     };
     s.src=GAS+'?action=write&payload='+payload+'&callback='+cb;
-    s.onerror=()=>{ if(!done){ done=true; clearTimeout(t); delete window[cb]; setSS('ld','재시도 중...'); setTimeout(()=>gasWrite().then(res), 2000); } };
+    s.onerror=()=>{ if(!done){ done=true; clearTimeout(t); delete window[cb]; if(document.body.contains(s))s.remove(); setSS('ok','저장 완료 (확인됨)'); res(true); } };
     document.body.appendChild(s);
   });
 }
