@@ -468,6 +468,25 @@ async function gasRead(){
     setSS('ok','동기화 완료 · '+nowT());return true;
   }catch(e){setSS('er','연결 불안정');toast('연결 불안정 — 🔄 동기화 버튼으로 재시도하세요','er');return false;}
 }
+
+/* ── 저장 직전 최신 데이터 재동기화 (동시편집 충돌 방지) ── */
+async function freshSync(mutator){
+  // 1. 저장 직전, 서버의 최신 데이터를 먼저 받아온다
+  try{
+    const fresh = await jsonp(GAS+'?t='+Date.now()+Math.random());
+    if(fresh && fresh.employees){
+      if(!fresh.customTypes) fresh.customTypes=[];
+      DB = fresh; // 최신 데이터로 갱신
+    }
+  }catch(e){ /* 동기화 실패 시 현재 메모리 데이터로 계속 진행 */ }
+  // 2. 그 최신 데이터 위에 내가 하려는 변경(추가/삭제)을 적용
+  const result = mutator(DB);
+  if(result === false) return {ok:false, aborted:true};
+  // 3. 저장
+  const ok = await gasWrite();
+  return {ok, aborted:false};
+}
+
 async function gasWrite(){
   setSS('ld','저장 중...');
   return new Promise(res=>{
@@ -780,10 +799,15 @@ async function saveEntry(){
   const name=document.getElementById('empIn').value.trim();
   if(!name){toast('직원 이름을 입력하세요','er');return}
   if(!selTyp){toast('휴가 유형을 선택하세요','er');return}
-  if(!DB.entries[selDt])DB.entries[selDt]=[];
-  if(DB.entries[selDt].find(e=>e.name===name&&e.type===selTyp)){toast('이미 등록된 항목입니다','er');return}
-  DB.entries[selDt].push({name,type:selTyp});
-  showLD('저장 중...');const ok=await gasWrite();hideLD();
+  showLD('저장 중...');
+  let dup=false;
+  const {ok}=await freshSync(db=>{
+    if(!db.entries[selDt])db.entries[selDt]=[];
+    if(db.entries[selDt].find(e=>e.name===name&&e.type===selTyp)){dup=true;return false}
+    db.entries[selDt].push({name,type:selTyp});
+  });
+  hideLD();
+  if(dup){toast('이미 등록된 항목입니다','er');renderEList(selDt);return}
   if(ok){renderEList(selDt);renderAll();document.getElementById('empIn').value='';toast(`${name} · ${selTyp} 등록 완료 ✓`,'ok')}
 }
 
@@ -792,32 +816,46 @@ async function saveCusEntry(){
   const nameInput=document.getElementById('cusEmpIn').value.trim();
   if(!label){toast('일정 내용을 입력하세요','er');return}
   if(!nameInput){toast('대상 직원을 입력하세요 (전체는 "(전체)" 선택)','er');return}
-  if(!DB.customTypes)DB.customTypes=[];
-  if(!DB.customTypes.includes(label))DB.customTypes.push(label);
-  if(!DB.entries[selDt])DB.entries[selDt]=[];
-  if(nameInput==='(전체)'){
-    // 전체 직원 등록
-    let added=0;
-    DB.employees.forEach(emp=>{
-      if(!DB.entries[selDt].find(e=>e.name===emp.name&&e.type===label)){
-        DB.entries[selDt].push({name:emp.name,type:label});added++;
-      }
-    });
-    if(added===0){toast('이미 전체 등록되어 있습니다','er');return}
-  }else{
-    if(DB.entries[selDt].find(e=>e.name===nameInput&&e.type===label)){toast('이미 등록된 항목입니다','er');return}
-    DB.entries[selDt].push({name:nameInput,type:label});
-  }
-  showLD('저장 중...');const ok=await gasWrite();hideLD();
+  showLD('저장 중...');
+  let dup=false;
+  const {ok}=await freshSync(db=>{
+    if(!db.customTypes)db.customTypes=[];
+    if(!db.customTypes.includes(label))db.customTypes.push(label);
+    if(!db.entries[selDt])db.entries[selDt]=[];
+    if(nameInput==='(전체)'){
+      let added=0;
+      db.employees.forEach(emp=>{
+        if(!db.entries[selDt].find(e=>e.name===emp.name&&e.type===label)){
+          db.entries[selDt].push({name:emp.name,type:label});added++;
+        }
+      });
+      if(added===0){dup=true;return false}
+    }else{
+      if(db.entries[selDt].find(e=>e.name===nameInput&&e.type===label)){dup=true;return false}
+      db.entries[selDt].push({name:nameInput,type:label});
+    }
+  });
+  hideLD();
+  if(dup){toast('이미 등록된 항목입니다','er');renderEList(selDt);return}
   if(ok){renderEList(selDt);renderAll();document.getElementById('cusLabel').value='';document.getElementById('cusEmpIn').value='';toast('커스텀 일정 등록 완료 ✓','ok')}
 }
 
 async function delEntry(key,idx){
   if(!confirm('이 항목을 삭제하시겠습니까?'))return;
-  DB.entries[key].splice(idx,1);
-  if(!DB.entries[key].length)delete DB.entries[key];
-  showLD('삭제 중...');const ok=await gasWrite();hideLD();
+  // idx 시점의 항목 식별값을 기억해서, 최신 데이터에서 같은 항목을 찾아 삭제
+  const target = (DB.entries[key]||[])[idx];
+  if(!target) return;
+  showLD('삭제 중...');
+  const {ok}=await freshSync(db=>{
+    if(!db.entries[key]) return false;
+    const i=db.entries[key].findIndex(e=>e.name===target.name&&e.type===target.type);
+    if(i===-1) return false;
+    db.entries[key].splice(i,1);
+    if(!db.entries[key].length) delete db.entries[key];
+  });
+  hideLD();
   if(ok){renderEList(key);renderAll();toast('삭제되었습니다','ok')}
+  else{renderEList(key);renderAll();toast('이미 삭제된 항목입니다','er')}
 }
 
 /* ── ADMIN ── */
@@ -850,33 +888,80 @@ function renderCusTg(){
 }
 async function addEmp(){
   const name=document.getElementById('newEn').value.trim();const color=document.getElementById('newEc').value;
-  if(!name)return;if(DB.employees.find(e=>e.name===name)){toast('이미 있는 직원','er');return}
-  DB.employees.push({name,color});document.getElementById('newEn').value='';
-  showLD('저장 중...');await gasWrite();hideLD();renderEmpTg();renderAll();toast(`${name} 추가 완료`,'ok');
+  if(!name)return;
+  showLD('저장 중...');
+  let dup=false;
+  await freshSync(db=>{
+    if(db.employees.find(e=>e.name===name)){dup=true;return false}
+    db.employees.push({name,color});
+  });
+  hideLD();
+  if(dup){toast('이미 있는 직원','er');renderEmpTg();return}
+  document.getElementById('newEn').value='';
+  renderEmpTg();renderAll();toast(`${name} 추가 완료`,'ok');
 }
 async function rmEmp(i){
-  if(!confirm(`${DB.employees[i].name}을(를) 삭제할까요?`))return;
-  DB.employees.splice(i,1);showLD('저장 중...');await gasWrite();hideLD();renderEmpTg();renderAll();toast('삭제됨','ok');
+  const target=DB.employees[i];
+  if(!target)return;
+  if(!confirm(`${target.name}을(를) 삭제할까요?`))return;
+  showLD('저장 중...');
+  await freshSync(db=>{
+    const idx=db.employees.findIndex(e=>e.name===target.name);
+    if(idx>-1) db.employees.splice(idx,1);
+  });
+  hideLD();renderEmpTg();renderAll();toast('삭제됨','ok');
 }
 async function addType(){
   const name=document.getElementById('newTn').value.trim();
-  if(!name)return;if(DB.leaveTypes.includes(name)){toast('이미 있는 유형','er');return}
-  DB.leaveTypes.push(name);document.getElementById('newTn').value='';
-  showLD('저장 중...');await gasWrite();hideLD();renderTypeTg();toast(`${name} 추가 완료`,'ok');
+  if(!name)return;
+  showLD('저장 중...');
+  let dup=false;
+  await freshSync(db=>{
+    if(db.leaveTypes.includes(name)){dup=true;return false}
+    db.leaveTypes.push(name);
+  });
+  hideLD();
+  if(dup){toast('이미 있는 유형','er');renderTypeTg();return}
+  document.getElementById('newTn').value='';
+  renderTypeTg();toast(`${name} 추가 완료`,'ok');
 }
 async function rmType(i){
+  const target=DB.leaveTypes[i];
+  if(!target)return;
   if(DB.leaveTypes.length<=1){toast('최소 1개 필요','er');return}
-  DB.leaveTypes.splice(i,1);showLD('저장 중...');await gasWrite();hideLD();renderTypeTg();toast('삭제됨','ok');
+  showLD('저장 중...');
+  await freshSync(db=>{
+    if(db.leaveTypes.length<=1) return false;
+    const idx=db.leaveTypes.indexOf(target);
+    if(idx>-1) db.leaveTypes.splice(idx,1);
+  });
+  hideLD();renderTypeTg();toast('삭제됨','ok');
 }
 async function addCusType(){
   const name=document.getElementById('newCn').value.trim();
-  if(!name)return;if(!DB.customTypes)DB.customTypes=[];
-  if(DB.customTypes.includes(name)){toast('이미 있는 유형','er');return}
-  DB.customTypes.push(name);document.getElementById('newCn').value='';
-  showLD('저장 중...');await gasWrite();hideLD();renderCusTg();toast(`${name} 추가 완료`,'ok');
+  if(!name)return;
+  showLD('저장 중...');
+  let dup=false;
+  await freshSync(db=>{
+    if(!db.customTypes)db.customTypes=[];
+    if(db.customTypes.includes(name)){dup=true;return false}
+    db.customTypes.push(name);
+  });
+  hideLD();
+  if(dup){toast('이미 있는 유형','er');renderCusTg();return}
+  document.getElementById('newCn').value='';
+  renderCusTg();toast(`${name} 추가 완료`,'ok');
 }
 async function rmCusType(i){
-  DB.customTypes.splice(i,1);showLD('저장 중...');await gasWrite();hideLD();renderCusTg();toast('삭제됨','ok');
+  const target=(DB.customTypes||[])[i];
+  if(!target)return;
+  showLD('저장 중...');
+  await freshSync(db=>{
+    if(!db.customTypes)return false;
+    const idx=db.customTypes.indexOf(target);
+    if(idx>-1) db.customTypes.splice(idx,1);
+  });
+  hideLD();renderCusTg();toast('삭제됨','ok');
 }
 
 /* ── UTILS ── */
