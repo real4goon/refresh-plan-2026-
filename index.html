@@ -462,10 +462,16 @@ async function gasRead(){
   setSS('ld','불러오는 중...');
   try{
     const d=await jsonp(GAS+'?t='+Date.now());
-    if(d&&d.employees)DB=d;
-    else if(!d||!Object.keys(d).length)await gasWrite();
-    if(!DB.customTypes)DB.customTypes=[];
-    setSS('ok','동기화 완료 · '+nowT());return true;
+    if(d&&d.employees){
+      DB=d;
+      if(!DB.customTypes)DB.customTypes=[];
+      setSS('ok','동기화 완료 · '+nowT());
+      return true;
+    }
+    // 빈 응답/이상 응답 → 절대 자동으로 덮어쓰지 않음 (데이터 보호 최우선)
+    setSS('er','데이터를 확인하지 못함');
+    toast('서버 데이터를 확인하지 못했습니다. 🔄 동기화로 재시도하세요','er');
+    return false;
   }catch(e){setSS('er','연결 불안정');toast('연결 불안정 — 🔄 동기화 버튼으로 재시도하세요','er');return false;}
 }
 
@@ -487,30 +493,63 @@ async function freshSync(mutator){
   return {ok, aborted:false};
 }
 
+/* 폼 전송: URL 길이 제한 없이 대용량 데이터 전송 (히든 iframe 타겟) */
+function formPost(url, fields){
+  return new Promise((resolve)=>{
+    let iframe=document.getElementById('_gasFrame');
+    if(!iframe){
+      iframe=document.createElement('iframe');
+      iframe.name='_gasFrame'; iframe.id='_gasFrame';
+      iframe.style.display='none';
+      document.body.appendChild(iframe);
+    }
+    const form=document.createElement('form');
+    form.method='POST'; form.action=url; form.target='_gasFrame';
+    form.style.display='none';
+    Object.keys(fields).forEach(k=>{
+      const inp=document.createElement('input');
+      inp.type='hidden'; inp.name=k; inp.value=fields[k];
+      form.appendChild(inp);
+    });
+    document.body.appendChild(form);
+    form.submit();
+    setTimeout(()=>{ if(document.body.contains(form))form.remove(); resolve(); },500);
+  });
+}
+
 async function gasWrite(){
   setSS('ld','저장 중...');
-  return new Promise(res=>{
-    const cb='cbw_'+Date.now();
-    const s=document.createElement('script');
-    const payload=encodeURIComponent(JSON.stringify({pw:PW,data:DB}));
-    let done=false;
-    const finish=(ok,msg)=>{
-      if(done)return; done=true;
-      clearTimeout(t);
-      delete window[cb];
-      if(document.body.contains(s))s.remove();
-      if(ok){setSS('ok','저장 완료 · '+nowT());res(true);}
-      else{setSS('er','저장 실패');toast(msg||'저장 실패','er');res(false);}
-    };
-    const t=setTimeout(()=>finish(false,'저장 시간 초과 - 새로고침 후 확인하세요'),12000);
-    window[cb]=(r)=>{
-      if(r&&r.ok) finish(true);
-      else finish(false,'저장 실패: '+(r&&r.msg||'오류'));
-    };
-    s.src=GAS+'?action=write&payload='+payload+'&callback='+cb;
-    s.onerror=()=>{ if(!done){ done=true; clearTimeout(t); delete window[cb]; if(document.body.contains(s))s.remove(); setSS('ok','저장 완료 (확인됨)'); res(true); } };
-    document.body.appendChild(s);
-  });
+  const snapshot=JSON.stringify(DB.entries||{});
+  try{
+    // 1. 폼 전송 (URL 길이 제한 없음)
+    await formPost(GAS, { pw:PW, data:JSON.stringify(DB) });
+    // 2. Apps Script 처리 대기
+    await new Promise(r=>setTimeout(r,1200));
+    // 3. 실제로 반영됐는지 재확인 (거짓 성공 방지)
+    const fresh=await jsonp(GAS+'?t='+Date.now()+Math.random());
+    if(fresh && fresh.employees && JSON.stringify(fresh.entries||{})===snapshot){
+      if(!fresh.customTypes)fresh.customTypes=[];
+      DB=fresh; // 서버 확정 데이터로 동기화
+      setSS('ok','저장 완료 · '+nowT());
+      return true;
+    }
+    // 검증 실패: 한 번 더 시도 (느린 반영일 수 있음)
+    await new Promise(r=>setTimeout(r,1500));
+    const fresh2=await jsonp(GAS+'?t='+Date.now()+Math.random());
+    if(fresh2 && fresh2.employees && JSON.stringify(fresh2.entries||{})===snapshot){
+      if(!fresh2.customTypes)fresh2.customTypes=[];
+      DB=fresh2;
+      setSS('ok','저장 완료 · '+nowT());
+      return true;
+    }
+    setSS('er','저장 확인 안됨');
+    toast('저장이 확인되지 않았습니다. 다시 시도해주세요','er');
+    return false;
+  }catch(e){
+    setSS('er','저장 실패');
+    toast('저장 실패: 인터넷 연결을 확인해주세요','er');
+    return false;
+  }
 }
 async function syncNow(){
   showLD('최신 데이터 불러오는 중...');
@@ -585,7 +624,14 @@ async function init(){
   renderSB();
   applyMob();
   showLD('구글 시트에서 데이터를 불러오는 중...');
-  await gasRead();hideLD();
+  let ok=await gasRead();
+  if(!ok){
+    // 최초 로딩 실패 시 한 번 더 재시도 (일시적 오류 대비, 빈 데이터로 진행 방지)
+    await new Promise(r=>setTimeout(r,1000));
+    ok=await gasRead();
+  }
+  hideLD();
+  if(!ok) toast('데이터를 불러오지 못했습니다. 🔄 동기화를 눌러 다시 시도해주세요','er');
   renderAll();
 }
 
